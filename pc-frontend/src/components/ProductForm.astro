@@ -1,0 +1,74 @@
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-md">
+  <h2 class="text-2xl font-bold text-gray-800 mb-6">Añadir Producto ➕</h2>
+  <form id="formulario-producto" class="flex flex-col gap-4">
+    <input type="text" id="nombre" placeholder="Nombre (ej. Laptop HP)" class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
+    <input type="text" id="descripcion" placeholder="Descripción" class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
+    <input type="number" id="precio" placeholder="Precio" step="0.01" class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
+    <input type="number" id="stock" placeholder="Stock" class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
+
+    <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg transition-colors mt-2">
+      Guardar Producto
+    </button>
+  </form>
+</div>
+
+<script>
+  import Swal from 'sweetalert2';
+
+  const formulario = document.getElementById('formulario-producto') as HTMLFormElement;
+
+  formulario?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const datos = {
+      nombre: (document.getElementById('nombre') as HTMLInputElement).value,
+      descripcion: (document.getElementById('descripcion') as HTMLInputElement).value,
+      precio: parseFloat((document.getElementById('precio') as HTMLInputElement).value),
+      stock: parseInt((document.getElementById('stock') as HTMLInputElement).value)
+    };
+
+    try {
+      const respuesta = await fetch('http://localhost:8080/api/productos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos)
+      });
+
+      // Si Spring Boot dice "OK" (Status 200)
+      if (respuesta.ok) {
+        Swal.fire({
+          title: '¡Éxito!',
+          text: 'El producto se guardó correctamente.',
+          icon: 'success',
+          confirmButtonColor: '#10b981' // emerald-500
+        }).then(() => {
+          window.location.reload();
+        });
+      }
+      // Si Spring Boot detiene el paquete en la Aduana (Status 400 Bad Request)
+      else if (respuesta.status === 400) {
+        Swal.fire({
+          title: 'Error de Validación',
+          text: 'Revisa los datos. Asegúrate de no dejar campos vacíos y usar valores positivos.',
+          icon: 'warning',
+          confirmButtonColor: '#f59e0b' // amber-500
+        });
+      }
+      // Si el servidor se apaga (Status 500)
+      else {
+        Swal.fire({
+          title: 'Error del Servidor',
+          text: 'No pudimos comunicarnos con la base de datos.',
+          icon: 'error',
+          confirmButtonColor: '#ef4444' // red-500
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire({
+        title: 'Error de Conexión',
+        text: 'Asegúrate de que Spring Boot esté encendido.',
+        icon: 'error'
+      });
+    }
+  });
+</script>
