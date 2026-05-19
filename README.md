@@ -18,7 +18,8 @@ Actualmente el sistema evoluciona hacia una arquitectura más profesional, incor
 | 🍃 **Spring Boot** | Framework para crear la API REST |
 | 🗃️ **Spring Data JPA** | Abstracción para acceso a datos |
 | 🔄 **Hibernate** | ORM para mapear entidades Java a tablas relacionales |
-| 🐬 **MariaDB** | Base de datos relacional |
+| 🐬 **MariaDB** | Base de datos relacional para desarrollo local |
+| 🐘 **PostgreSQL / Aiven** | Base de datos relacional para producción |
 | 🌐 **REST API** | Comunicación HTTP con el frontend |
 | 📦 **Maven** | Gestión de dependencias y ciclo de vida del proyecto |
 | ✅ **Jakarta Validation** | Validación de datos con `@Valid`, `@NotBlank`, `@Min`, `@DecimalMin` |
@@ -238,7 +239,7 @@ cd kimstore-2.0
 
 ---
 
-### 2. Configurar MariaDB
+### 2. Configurar la base de datos local
 
 Crea una base de datos para el proyecto:
 
@@ -246,31 +247,47 @@ Crea una base de datos para el proyecto:
 CREATE DATABASE kimstore_db;
 ```
 
+En desarrollo local, el proyecto usa MariaDB por defecto. En producción, puede usar PostgreSQL en Aiven mediante variables de entorno.
+
 ---
 
 ### 3. Configurar el backend
 
-Edita el archivo:
+El archivo:
 
 ```text
 pc-backend/src/main/resources/application.properties
 ```
 
-Ejemplo de configuración:
+está preparado para trabajar con variables de entorno y valores por defecto:
 
 ```properties
 spring.application.name=pc-backend
 
-spring.datasource.url=jdbc:mariadb://localhost:3306/kimstore_db
-spring.datasource.username=TU_USUARIO
-spring.datasource.password=TU_PASSWORD
-spring.datasource.driver-class-name=org.mariadb.jdbc.Driver
+spring.datasource.url=${DB_URL:jdbc:mariadb://localhost:3306/kimstore_db}
+spring.datasource.username=${DB_USERNAME:root}
+spring.datasource.password=${DB_PASSWORD:}
+spring.datasource.driver-class-name=${DB_DRIVER:org.mariadb.jdbc.Driver}
 
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
+spring.jpa.hibernate.ddl-auto=${DDL_AUTO:update}
+spring.jpa.show-sql=${SHOW_SQL:true}
 ```
 
-> Por seguridad, evita subir credenciales reales al repositorio. Para entornos productivos, usa variables de entorno o un gestor de secretos.
+Esto significa que Spring Boot primero intentará leer variables de entorno. Si no existen, usará los valores locales después de `:`.
+
+Para ejecutar en IntelliJ con MariaDB local, agrega esta variable en **Run/Debug Configurations → Environment variables**:
+
+```text
+DB_PASSWORD=TU_PASSWORD_LOCAL
+```
+
+Ejemplo:
+
+```text
+DB_PASSWORD=KimJesus21
+```
+
+> Por seguridad, no subas credenciales reales al repositorio. Las contraseñas locales y de producción deben vivir fuera del código.
 
 ---
 
@@ -325,6 +342,79 @@ http://localhost:4321
 
 ---
 
+## ☁️ Despliegue en Render con Aiven PostgreSQL
+
+El backend está preparado para desplegarse en Render usando PostgreSQL administrado por Aiven.
+
+### Variables de entorno para producción
+
+En Render, configura estas variables en el servicio del backend:
+
+| Variable | Valor esperado |
+| --- | --- |
+| `DB_URL` | URL JDBC de Aiven PostgreSQL |
+| `DB_USERNAME` | Usuario de la base de datos Aiven |
+| `DB_PASSWORD` | Contraseña de la base de datos Aiven |
+| `DB_DRIVER` | `org.postgresql.Driver` |
+| `DDL_AUTO` | `update` para crear/actualizar tablas automáticamente, o `validate` si ya gestionas migraciones |
+| `SHOW_SQL` | `false` en producción |
+
+Ejemplo:
+
+```text
+DB_URL=jdbc:postgresql://HOST:PUERTO/NOMBRE_DB?sslmode=require
+DB_USERNAME=avnadmin
+DB_PASSWORD=TU_PASSWORD_DE_AIVEN
+DB_DRIVER=org.postgresql.Driver
+DDL_AUTO=update
+SHOW_SQL=false
+```
+
+### Separación dev/prod
+
+```text
+Desarrollo local
+  ↓
+MariaDB local
+  ↓
+Valores por defecto en application.properties
+
+Producción
+  ↓
+Render
+  ↓
+Variables de entorno
+  ↓
+Aiven PostgreSQL
+```
+
+### Configuración sugerida en Render
+
+| Campo | Valor |
+| --- | --- |
+| Root Directory | `pc-backend` |
+| Build Command | `./mvnw clean package -DskipTests` |
+| Start Command | `java -jar target/pc-backend-0.0.1-SNAPSHOT.jar` |
+| Runtime | Java |
+
+Si Render detecta Windows scripts, usa los comandos de Linux porque Render ejecuta el build en un entorno Linux.
+
+### Driver PostgreSQL
+
+El backend incluye el driver:
+
+```xml
+<dependency>
+  <groupId>org.postgresql</groupId>
+  <artifactId>postgresql</artifactId>
+  <scope>runtime</scope>
+</dependency>
+```
+
+Esto permite que la misma aplicación funcione con MariaDB en desarrollo y PostgreSQL en producción, cambiando únicamente variables de entorno.
+
+---
+
 ## 🔌 Flujo de Comunicación
 
 ```text
@@ -344,6 +434,8 @@ MariaDB
 ```
 
 El frontend actúa como cliente de la API: captura datos del usuario, valida estructuras mediante TypeScript y envía solicitudes HTTP al backend. El backend procesa las operaciones del inventario y persiste la información en MariaDB.
+
+En producción, la capa de persistencia apunta a Aiven PostgreSQL mediante variables de entorno, sin modificar el código fuente.
 
 ### Flujo de creación y actualización
 
@@ -403,6 +495,8 @@ Render dinámico de tarjetas y controles Anterior/Siguiente
 - ✅ **Aserciones del DOM controladas:** el frontend puede interactuar con elementos HTML de forma explícita y segura.
 - ✅ **API REST estándar:** uso de métodos HTTP semánticos para operaciones CRUD.
 - ✅ **Persistencia desacoplada:** Spring Data JPA abstrae el acceso a MariaDB.
+- ✅ **Configuración por entorno:** `application.properties` usa `${VARIABLE:valor_por_defecto}` para separar desarrollo y producción.
+- ✅ **Credenciales fuera del repositorio:** las contraseñas se configuran desde IntelliJ, terminal, Render o el proveedor de nube.
 - ✅ **Seguridad en dependencias:** `pnpm install --ignore-scripts` limita la ejecución automática de scripts externos durante la instalación.
 - ✅ **Documentación de configuración:** las credenciales se muestran como placeholders para evitar exposición accidental.
 
@@ -474,6 +568,8 @@ KimStore 2.0 ya cuenta con:
 - ✅ Manejo visual cuando el backend no está disponible.
 - ✅ Controles de paginación **Anterior** y **Siguiente**.
 - ✅ Carga dinámica del catálogo desde el cliente para respetar query params.
+- ✅ Preparación para despliegue en Render con Aiven PostgreSQL.
+- ✅ Variables de entorno para separar base de datos local y producción.
 
 ---
 
@@ -487,6 +583,7 @@ KimStore 2.0 ya cuenta con:
 - 📦 Separar lógica frontend en archivos TypeScript dedicados.
 - 🧪 Agregar pruebas unitarias para service y controller.
 - 🔢 Agregar selector de tamaño de página (`size`) en la interfaz.
+- 🚀 Desplegar backend en Render y conectar el frontend al dominio público de la API.
 
 ---
 
@@ -494,4 +591,4 @@ KimStore 2.0 ya cuenta con:
 
 **KimStore 2.0** demuestra una implementación full stack moderna para la administración de inventario de computadoras. Su estructura como monorepo facilita el desarrollo coordinado entre frontend y backend, mientras que Spring Boot, MariaDB, Astro, TypeScript y Tailwind CSS ofrecen una base sólida para un sistema escalable, mantenible y presentable en un portafolio profesional.
 
-Con la incorporación de `ProductoService`, `ProductoDTO`, validaciones con `@Valid`, búsqueda por nombre y paginación con Spring Data, el proyecto deja de ser solo un CRUD básico y empieza a tomar forma de una aplicación con arquitectura limpia, preparada para crecer hacia funcionalidades más avanzadas como catálogo, carrito, usuarios y panel administrativo.
+Con la incorporación de `ProductoService`, `ProductoDTO`, validaciones con `@Valid`, búsqueda por nombre, paginación con Spring Data y configuración por variables de entorno, el proyecto deja de ser solo un CRUD básico y empieza a tomar forma de una aplicación con arquitectura limpia, preparada para crecer hacia funcionalidades más avanzadas como catálogo, carrito, usuarios, panel administrativo y despliegue real en la nube.
