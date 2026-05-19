@@ -16,6 +16,9 @@
   import Swal from 'sweetalert2';
 
   const formulario = document.getElementById('formulario-producto') as HTMLFormElement;
+  const API_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+    ? 'http://localhost:8080/api/productos'
+    : 'https://kimstore-api-backend.onrender.com/api/productos';
 
   formulario?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -27,7 +30,7 @@
     };
 
     try {
-      const respuesta = await fetch('http://localhost:8080/api/productos', {
+      const respuesta = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(datos)

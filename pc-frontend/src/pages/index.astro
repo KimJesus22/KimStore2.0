@@ -58,7 +58,9 @@ import ProductForm from '../components/ProductForm.astro';
         stock: number;
       }
 
-      const API_URL = 'http://localhost:8080/api/productos';
+      const API_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+        ? 'http://localhost:8080/api/productos'
+        : 'https://kimstore-api-backend.onrender.com/api/productos';
       const buscarInput = document.getElementById('buscar') as HTMLInputElement;
       const limpiarBusqueda = document.getElementById('limpiar-busqueda') as HTMLAnchorElement;
       const estadoProductos = document.getElementById('estado-productos') as HTMLDivElement;
@@ -191,7 +193,7 @@ import ProductForm from '../components/ProductForm.astro';
           estadoProductos.className = 'rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-800 mb-6';
           estadoProductos.innerHTML = `
             <h2 class="font-bold text-lg mb-1">Backend no disponible</h2>
-            <p class="text-sm">Levanta Spring Boot en <strong>http://localhost:8080</strong> para cargar, guardar, editar y eliminar productos.</p>
+            <p class="text-sm">Verifica que la API esté disponible en <strong>${API_URL}</strong> para cargar, guardar, editar y eliminar productos.</p>
           `;
         }
       };
