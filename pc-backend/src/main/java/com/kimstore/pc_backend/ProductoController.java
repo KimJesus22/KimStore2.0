@@ -4,9 +4,8 @@ import com.kimstore.pc_backend.service.ProductoService;
 import com.kimstore.pc_backend.dto.ProductoDTO;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/productos")
@@ -17,8 +16,12 @@ public class ProductoController {
     private ProductoService productoService;
 
     @GetMapping
-    public List<Producto> listar() {
-        return productoService.obtenerTodos();
+    public Page<Producto> listar(
+            @RequestParam(required = false) String buscar,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size) {
+
+        return productoService.buscarPorNombrePagina(buscar, page, size);
     }
 
     @PostMapping
