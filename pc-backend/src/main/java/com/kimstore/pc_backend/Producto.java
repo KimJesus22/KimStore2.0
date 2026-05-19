@@ -32,6 +32,9 @@ public class Producto {
     @Min(value = 0, message = "El stock no puede ser un número negativo")
     private Integer stock;
 
+    // Nueva columna para guardar el link de la imagen
+    private String imageUrl;
+
     // Constructores (Concepto clave de POO)
     public Producto() {
     }
@@ -58,4 +61,7 @@ public class Producto {
 
     public Integer getStock() { return stock; }
     public void setStock(Integer stock) { this.stock = stock; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 }

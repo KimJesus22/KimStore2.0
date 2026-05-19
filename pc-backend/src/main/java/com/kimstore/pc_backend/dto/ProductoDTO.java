@@ -13,5 +13,8 @@ public record ProductoDTO(
         Double precio,
 
         @Min(value = 0, message = "El stock no puede ser negativo")
-        Integer stock
+        Integer stock,
+
+        // Aquí NO ponemos el archivo real, solo el String por si queremos actualizarlo
+        String imageUrl
 ) {}

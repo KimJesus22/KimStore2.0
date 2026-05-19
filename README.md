@@ -4,7 +4,7 @@
 
 El proyecto separa responsabilidades entre un backend robusto con **Java + Spring Boot** y un frontend rápido, tipado y moderno construido con **Astro + TypeScript + Tailwind CSS**.
 
-Actualmente el sistema evoluciona hacia una arquitectura más profesional, incorporando una capa de servicios, DTOs para separar la entrada de datos de las entidades JPA, validaciones declarativas con `jakarta.validation`, búsqueda por nombre y paginación desde el backend.
+Actualmente el sistema evoluciona hacia una arquitectura más profesional, incorporando una capa de servicios, DTOs para separar la entrada de datos de las entidades JPA, validaciones declarativas con `jakarta.validation`, búsqueda por nombre, paginación desde el backend y carga de imágenes con Cloudinary.
 
 ---
 
@@ -25,6 +25,8 @@ Actualmente el sistema evoluciona hacia una arquitectura más profesional, incor
 | ✅ **Jakarta Validation** | Validación de datos con `@Valid`, `@NotBlank`, `@Min`, `@DecimalMin` |
 | 🧱 **DTO Pattern** | Separación entre datos externos y entidades internas |
 | 📄 **Spring Data Page** | Respuestas paginadas con `Page`, `PageRequest` y `Pageable` |
+| ☁️ **Cloudinary** | Almacenamiento externo de imágenes de productos |
+| 📎 **MultipartFile** | Recepción de archivos mediante `multipart/form-data` |
 
 ### 🎨 Frontend - `pc-frontend`
 
@@ -38,6 +40,7 @@ Actualmente el sistema evoluciona hacia una arquitectura más profesional, incor
 | 🧩 **Componentes Astro** | Separación visual en `ProductCard` y `ProductForm` |
 | 🔎 **URLSearchParams** | Lectura de `buscar` y `page` desde la URL |
 | 🍬 **SweetAlert2** | Alertas visuales para respuestas del formulario |
+| 🖼️ **FormData + Blob** | Envío de DTO JSON e imagen opcional en una sola petición |
 
 ---
 
@@ -74,7 +77,9 @@ Controller  →  Service  →  Repository  →  Entity  →  MariaDB
     ↑             ↑             ↑
     │             │             └── Consultas derivadas y paginadas
     │             └── Convierte ProductoDTO en Producto y prepara PageRequest
-    └── Recibe JSON validado con @Valid y parámetros buscar/page/size
+    └── Recibe JSON validado, multipart, imágenes y parámetros buscar/page/size
+
+CloudinaryService → Cloudinary → URL pública → Producto.imageUrl
 ```
 
 #### **DTO - Entrada limpia de datos**
@@ -84,6 +89,10 @@ Controller  →  Service  →  Repository  →  Entity  →  MariaDB
 #### **Service - Lógica de negocio**
 
 `ProductoService` concentra la lógica del CRUD. El controller delega aquí las operaciones de crear, actualizar, listar y eliminar productos. Esta capa también transforma el DTO externo en la entidad interna `Producto`.
+
+#### **CloudinaryService - Gestión de imágenes**
+
+`CloudinaryService` recibe un `MultipartFile`, sube la imagen a Cloudinary y devuelve una URL pública. Esa URL se guarda en el campo `imageUrl` de la entidad `Producto`, evitando almacenar archivos binarios directamente en la base de datos.
 
 #### **Repository - Búsqueda y paginación**
 
@@ -116,8 +125,8 @@ Como el frontend se ejecuta en Astro con salida estática, la carga del catálog
 | --- | --- | --- |
 | `GET` | `/api/productos` | Lista productos paginados |
 | `GET` | `/api/productos?buscar=hp&page=0&size=6` | Busca por nombre y pagina resultados |
-| `POST` | `/api/productos` | Crea un producto usando `ProductoDTO` |
-| `PUT` | `/api/productos/{id}` | Actualiza un producto existente usando `ProductoDTO` |
+| `POST` | `/api/productos` | Crea un producto usando `multipart/form-data` con `ProductoDTO` e imagen opcional |
+| `PUT` | `/api/productos/{id}` | Actualiza un producto usando `multipart/form-data` con `ProductoDTO` e imagen opcional |
 | `DELETE` | `/api/productos/{id}` | Elimina un producto por ID |
 
 ### Parámetros de consulta
@@ -146,7 +155,8 @@ Respuesta esperada de Spring Data `Page`:
       "nombre": "Laptop HP Pavilion 15",
       "descripcion": "AMD Ryzen 7, 16GB RAM, 512GB SSD, Windows 11",
       "precio": 16800.0,
-      "stock": 6
+      "stock": 6,
+      "imageUrl": "https://res.cloudinary.com/..."
     }
   ],
   "number": 0,
@@ -185,6 +195,7 @@ KimStore/
 │       │   │               ├── dto/
 │       │   │               │   └── ProductoDTO.java
 │       │   │               └── service/
+│       │   │                   ├── CloudinaryService.java
 │       │   │                   └── ProductoService.java
 │       │   └── resources/
 │       │       ├── application.properties
@@ -271,6 +282,10 @@ spring.datasource.driver-class-name=${DB_DRIVER:org.mariadb.jdbc.Driver}
 
 spring.jpa.hibernate.ddl-auto=${DDL_AUTO:update}
 spring.jpa.show-sql=${SHOW_SQL:true}
+
+cloudinary.cloud_name=${CLOUDINARY_CLOUD_NAME:}
+cloudinary.api_key=${CLOUDINARY_API_KEY:}
+cloudinary.api_secret=${CLOUDINARY_API_SECRET:}
 ```
 
 Esto significa que Spring Boot primero intentará leer variables de entorno. Si no existen, usará los valores locales después de `:`.
@@ -358,6 +373,9 @@ En Render, configura estas variables en el servicio del backend:
 | `DB_DRIVER` | `org.postgresql.Driver` |
 | `DDL_AUTO` | `update` para crear/actualizar tablas automáticamente, o `validate` si ya gestionas migraciones |
 | `SHOW_SQL` | `false` en producción |
+| `CLOUDINARY_CLOUD_NAME` | Nombre del cloud de Cloudinary |
+| `CLOUDINARY_API_KEY` | API key de Cloudinary |
+| `CLOUDINARY_API_SECRET` | API secret de Cloudinary |
 
 Ejemplo:
 
@@ -368,6 +386,9 @@ DB_PASSWORD=TU_PASSWORD_DE_AIVEN
 DB_DRIVER=org.postgresql.Driver
 DDL_AUTO=update
 SHOW_SQL=false
+CLOUDINARY_CLOUD_NAME=TU_CLOUD_NAME
+CLOUDINARY_API_KEY=TU_API_KEY
+CLOUDINARY_API_SECRET=TU_API_SECRET
 ```
 
 ### Separación dev/prod
@@ -413,6 +434,16 @@ El backend incluye el driver:
 
 Esto permite que la misma aplicación funcione con MariaDB en desarrollo y PostgreSQL en producción, cambiando únicamente variables de entorno.
 
+### Variables de Cloudinary
+
+Las credenciales de Cloudinary no deben subirse al repositorio. En local se configuran desde IntelliJ, terminal o variables de usuario de Windows. En Render se configuran como environment variables.
+
+```text
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+```
+
 ---
 
 ## 🔌 Flujo de Comunicación
@@ -442,11 +473,17 @@ En producción, la capa de persistencia apunta a Aiven PostgreSQL mediante varia
 ```text
 Formulario Astro
   ↓
-fetch(POST / PUT)
+FormData con ProductoDTO como Blob + imagen opcional
+  ↓
+fetch(POST / PUT multipart/form-data)
   ↓
 ProductoController
   ↓
 ProductoDTO validado
+  ↓
+CloudinaryService si hay imagen
+  ↓
+URL pública guardada en imageUrl
   ↓
 ProductoService
   ↓
@@ -479,6 +516,27 @@ Respuesta Page<Producto>
 Render dinámico de tarjetas y controles Anterior/Siguiente
 ```
 
+### Flujo de imagen de producto
+
+```text
+Usuario selecciona imagen
+  ↓
+ProductForm.astro crea FormData
+  ↓
+producto = Blob JSON
+imagen = archivo opcional
+  ↓
+ProductoController recibe @RequestPart
+  ↓
+CloudinaryService sube la imagen
+  ↓
+Cloudinary devuelve URL pública
+  ↓
+Producto.imageUrl se guarda en la base de datos
+  ↓
+ProductCard muestra la imagen o un placeholder
+```
+
 ---
 
 ## 🛡️ Buenas Prácticas Aplicadas
@@ -491,6 +549,8 @@ Render dinámico de tarjetas y controles Anterior/Siguiente
 - ✅ **Búsqueda semántica con Spring Data JPA:** el método `findByNombreContainingIgnoreCase` genera la consulta automáticamente.
 - ✅ **Paginación desde backend:** `PageRequest` limita la cantidad de productos enviados al frontend.
 - ✅ **Render dinámico del catálogo:** búsqueda y paginación leen la URL del navegador y actualizan la lista con `fetch`.
+- ✅ **Carga de imágenes externa:** Cloudinary almacena las imágenes y la base de datos conserva solo la URL.
+- ✅ **Envío multipart robusto:** el frontend usa `FormData` y `Blob` para enviar DTO + archivo en una sola petición.
 - ✅ **Tipado fuerte en frontend:** TypeScript permite trabajar con interfaces claras y reduce errores en tiempo de desarrollo.
 - ✅ **Aserciones del DOM controladas:** el frontend puede interactuar con elementos HTML de forma explícita y segura.
 - ✅ **API REST estándar:** uso de métodos HTTP semánticos para operaciones CRUD.
@@ -514,6 +574,39 @@ El backend valida los datos antes de guardarlos:
 | `stock` | No puede ser negativo |
 
 Estas reglas protegen la base de datos y evitan que el frontend envíe información incompleta o inconsistente.
+
+---
+
+## 🖼️ Imágenes de Producto
+
+Los productos pueden incluir una imagen opcional.
+
+### Backend
+
+- `Producto` contiene el campo `imageUrl`.
+- `ProductoDTO` acepta `imageUrl` como string opcional.
+- `ProductoController` recibe `multipart/form-data` en `POST` y `PUT`.
+- `CloudinaryService` sube la imagen y devuelve la URL pública.
+- `ProductoService` guarda `imageUrl` en la entidad.
+
+### Frontend
+
+- `ProductForm.astro` incluye un input `type="file"` opcional.
+- El formulario crea un `FormData`.
+- El DTO se envía como `Blob` con `type: "application/json"`.
+- La imagen se envía como parte `imagen`.
+- `ProductCard.astro` muestra la imagen si existe.
+- Si no hay imagen, se muestra un placeholder visual con 💻.
+
+Ejemplo conceptual de la petición:
+
+```text
+POST /api/productos
+Content-Type: multipart/form-data
+
+producto: Blob JSON con nombre, descripcion, precio, stock, imageUrl
+imagen: archivo opcional
+```
 
 ---
 
@@ -559,12 +652,15 @@ KimStore 2.0 ya cuenta con:
 - ✅ `ProductoRepository` usando `JpaRepository`.
 - ✅ `ProductoService` como capa de lógica de negocio.
 - ✅ `ProductoDTO` para entrada limpia de datos.
+- ✅ Campo `imageUrl` en productos.
+- ✅ Servicio `CloudinaryService` para subir imágenes.
 - ✅ Validaciones con `@Valid` y Jakarta Validation.
 - ✅ Búsqueda por nombre ignorando mayúsculas/minúsculas.
 - ✅ Paginación backend con `Page`, `Pageable` y `PageRequest`.
 - ✅ Frontend Astro consumiendo la API con `fetch`.
 - ✅ Componentes visuales `ProductCard` y `ProductForm`.
 - ✅ Tipos TypeScript en `src/types/producto.ts`.
+- ✅ Visualización de imagen real o placeholder por producto.
 - ✅ Manejo visual cuando el backend no está disponible.
 - ✅ Controles de paginación **Anterior** y **Siguiente**.
 - ✅ Carga dinámica del catálogo desde el cliente para respetar query params.
@@ -578,7 +674,8 @@ KimStore 2.0 ya cuenta con:
 - 🔁 Convertir también las respuestas del backend de `Producto` a `ProductoDTO`.
 - ⚠️ Agregar manejo global de errores con `@ControllerAdvice`.
 - 🔍 Agregar filtros avanzados por precio, stock o categoría.
-- 🖼️ Añadir campo de imagen para productos.
+- 🖼️ Agregar edición visual de imagen desde el modal o flujo de actualización.
+- 🧹 Eliminar imágenes antiguas de Cloudinary cuando se reemplacen o borren productos.
 - 🔐 Preparar autenticación y roles para un futuro panel administrativo.
 - 📦 Separar lógica frontend en archivos TypeScript dedicados.
 - 🧪 Agregar pruebas unitarias para service y controller.
@@ -591,4 +688,4 @@ KimStore 2.0 ya cuenta con:
 
 **KimStore 2.0** demuestra una implementación full stack moderna para la administración de inventario de computadoras. Su estructura como monorepo facilita el desarrollo coordinado entre frontend y backend, mientras que Spring Boot, MariaDB, Astro, TypeScript y Tailwind CSS ofrecen una base sólida para un sistema escalable, mantenible y presentable en un portafolio profesional.
 
-Con la incorporación de `ProductoService`, `ProductoDTO`, validaciones con `@Valid`, búsqueda por nombre, paginación con Spring Data y configuración por variables de entorno, el proyecto deja de ser solo un CRUD básico y empieza a tomar forma de una aplicación con arquitectura limpia, preparada para crecer hacia funcionalidades más avanzadas como catálogo, carrito, usuarios, panel administrativo y despliegue real en la nube.
+Con la incorporación de `ProductoService`, `ProductoDTO`, validaciones con `@Valid`, búsqueda por nombre, paginación con Spring Data, carga de imágenes con Cloudinary y configuración por variables de entorno, el proyecto deja de ser solo un CRUD básico y empieza a tomar forma de una aplicación con arquitectura limpia, preparada para crecer hacia funcionalidades más avanzadas como catálogo, carrito, usuarios, panel administrativo y despliegue real en la nube.

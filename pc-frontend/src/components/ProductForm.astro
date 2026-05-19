@@ -6,7 +6,12 @@
     <input type="number" id="precio" placeholder="Precio" step="0.01" class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
     <input type="number" id="stock" placeholder="Stock" class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
 
-    <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg transition-colors mt-2">
+    <div class="mb-4">
+      <label class="block text-gray-700 text-sm font-bold mb-2">Imagen (Opcional)</label>
+      <input type="file" id="imagenInput" accept="image/*" class="w-full text-gray-700 px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" />
+    </div>
+
+    <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
       Guardar Producto
     </button>
   </form>
@@ -22,18 +27,35 @@
 
   formulario?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const datos = {
+
+    // 1. Armamos el DTO de texto
+    const productoDTO = {
       nombre: (document.getElementById('nombre') as HTMLInputElement).value,
       descripcion: (document.getElementById('descripcion') as HTMLInputElement).value,
       precio: parseFloat((document.getElementById('precio') as HTMLInputElement).value),
       stock: parseInt((document.getElementById('stock') as HTMLInputElement).value)
     };
 
+    // 2. Creamos el paquete FormData
+    const formData = new FormData();
+
+    // TRUCO PRO: Metemos el JSON dentro de un "Blob" para que Spring Boot lo reconozca
+    formData.append("producto", new Blob([JSON.stringify(productoDTO)], {
+      type: "application/json"
+    }));
+
+    // 3. Atrapamos el archivo de imagen (si el usuario seleccionó uno)
+    const imagenInput = document.getElementById('imagenInput') as HTMLInputElement;
+    if (imagenInput.files && imagenInput.files.length > 0) {
+      formData.append("imagen", imagenInput.files[0]);
+    }
+
     try {
+      // OJO: Al usar FormData, NO debes poner "Content-Type" en los headers,
+      // el navegador lo calcula automáticamente.
       const respuesta = await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datos)
+        body: formData
       });
 
       // Si Spring Boot dice "OK" (Status 200)

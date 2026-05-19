@@ -31,6 +31,7 @@ public class ProductoService {
         producto.setDescripcion(dto.descripcion());
         producto.setPrecio(dto.precio());
         producto.setStock(dto.stock());
+        producto.setImageUrl(dto.imageUrl());
         return productoRepository.save(producto);
     }
 
@@ -44,6 +45,7 @@ public class ProductoService {
             producto.setDescripcion(dto.descripcion());
             producto.setPrecio(dto.precio());
             producto.setStock(dto.stock());
+            producto.setImageUrl(dto.imageUrl());
             return productoRepository.save(producto);
         }).orElse(null);
     }
