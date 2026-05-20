@@ -53,6 +53,9 @@ public class SecurityConfig {
                         // 🔓 CUALQUIERA puede intentar iniciar sesión (POST al login que crearemos pronto)
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
 
+                        // 🔓 CUALQUIERA puede finalizar una compra desde el carrito
+                        .requestMatchers(HttpMethod.POST, "/api/productos/comprar").permitAll()
+
                         // 🔒 PARA TODO LO DEMÁS (Crear, Editar, Borrar), tienes que estar autenticado
                         .anyRequest().authenticated()
                 )

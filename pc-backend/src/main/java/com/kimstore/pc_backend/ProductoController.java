@@ -1,15 +1,20 @@
 package com.kimstore.pc_backend;
 
+import com.kimstore.pc_backend.dto.ItemCompraDTO;
 import com.kimstore.pc_backend.dto.ProductoDTO;
 import com.kimstore.pc_backend.service.CloudinaryService;
 import com.kimstore.pc_backend.service.ProductoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/productos")
@@ -18,6 +23,9 @@ public class ProductoController {
 
     @Autowired
     private ProductoService productoService;
+
+    @Autowired
+    private ProductoRepository productoRepository;
 
     @Autowired
     private CloudinaryService cloudinaryService;
@@ -87,5 +95,24 @@ public class ProductoController {
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable Long id) {
         productoService.eliminar(id);
+    }
+
+    @PostMapping("/comprar")
+    @Transactional
+    public ResponseEntity<?> procesarCompra(@RequestBody List<ItemCompraDTO> carrito) {
+        for (ItemCompraDTO item : carrito) {
+            Producto producto = productoRepository.findById(item.id())
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + item.id()));
+
+            if (producto.getStock() < item.cantidad()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "No hay suficiente stock para: " + producto.getNombre()));
+            }
+
+            producto.setStock(producto.getStock() - item.cantidad());
+            productoRepository.save(producto);
+        }
+
+        return ResponseEntity.ok(Map.of("mensaje", "Compra procesada con exito"));
     }
 }

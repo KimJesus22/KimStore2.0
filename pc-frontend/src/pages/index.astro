@@ -9,6 +9,12 @@ import ProductForm from '../components/ProductForm.astro';
     <title>KimStore - Dashboard Profesional</title>
   </head>
   <body class="bg-gray-50 font-sans p-8 max-w-6xl mx-auto">
+    <button id="cart-button" type="button" class="fixed top-6 right-6 bg-white p-3 rounded-full shadow-2xl z-50 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform border border-gray-100">
+      <span class="text-2xl">🛒</span>
+      <span id="cart-badge" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full hidden">
+        0
+      </span>
+    </button>
 
     <header class="mb-12">
       <h1 class="text-4xl font-extrabold text-gray-900 mb-2">KimStore 2.0 💻</h1>
@@ -50,6 +56,9 @@ import ProductForm from '../components/ProductForm.astro';
     </main>
 
     <script>
+      import { agregarAlCarrito, cart, eliminarDelCarrito, limpiarCarrito } from '../store/cartStore.js';
+      import Swal from 'sweetalert2';
+
       interface Producto {
         id: number;
         nombre: string;
@@ -67,6 +76,8 @@ import ProductForm from '../components/ProductForm.astro';
       const estadoProductos = document.getElementById('estado-productos') as HTMLDivElement;
       const productosGrid = document.getElementById('productos-grid') as HTMLDivElement;
       const paginacion = document.getElementById('paginacion') as HTMLDivElement;
+      const cartButton = document.getElementById('cart-button') as HTMLButtonElement;
+      const cartBadge = document.getElementById('cart-badge') as HTMLSpanElement;
 
       const escaparHtml = (valor: string) => {
         const elemento = document.createElement('span');
@@ -93,6 +104,13 @@ import ProductForm from '../components/ProductForm.astro';
             <p class="text-gray-600 text-sm mb-4">${escaparHtml(producto.descripcion)}</p>
             <p class="text-3xl font-black text-emerald-500 mb-2">$${producto.precio}</p>
             <p class="text-xs text-gray-400 font-medium tracking-wide uppercase">Stock: ${producto.stock} unidades</p>
+
+            <button
+              class="btn-add-cart w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex justify-center items-center gap-2"
+              data-producto="${encodeURIComponent(JSON.stringify(producto))}">
+              <span>Añadir al carrito</span>
+              <span>🛒</span>
+            </button>
 
             <div class="mt-4 flex gap-4 border-t border-gray-100 pt-4">
               <button class="text-sm text-blue-500 hover:text-blue-700 font-semibold flex items-center gap-1 btn-editar"
@@ -139,6 +157,29 @@ import ProductForm from '../components/ProductForm.astro';
               });
               window.location.reload();
             }
+          });
+        });
+
+        document.querySelectorAll('.btn-add-cart').forEach(boton => {
+          boton.addEventListener('click', () => {
+            const t = boton as HTMLButtonElement;
+            const productoRaw = t.getAttribute('data-producto');
+
+            if (!productoRaw) return;
+
+            const producto = JSON.parse(decodeURIComponent(productoRaw));
+            agregarAlCarrito(producto);
+
+            Swal.fire({
+              toast: true,
+              position: 'bottom-end',
+              icon: 'success',
+              title: '¡Agregado al carrito!',
+              showConfirmButton: false,
+              timer: 1500,
+              background: '#333',
+              color: '#fff'
+            });
           });
         });
 
@@ -213,6 +254,142 @@ import ProductForm from '../components/ProductForm.astro';
           `;
         }
       };
+
+      cart.subscribe((datosDelCarrito) => {
+        const totalArticulos = datosDelCarrito.reduce((suma, item) => suma + item.cantidad, 0);
+
+        if (totalArticulos > 0) {
+          cartBadge.textContent = totalArticulos.toString();
+          cartBadge.classList.remove('hidden');
+        } else {
+          cartBadge.classList.add('hidden');
+        }
+      });
+
+      cartButton.addEventListener('click', () => {
+        const carritoActual = cart.get();
+
+        if (carritoActual.length === 0) {
+          Swal.fire({
+            icon: 'info',
+            title: 'Carrito vacío',
+            text: 'Agrega una computadora para verla aquí.',
+            confirmButtonColor: '#2563eb'
+          });
+          return;
+        }
+
+        const total = carritoActual.reduce((suma, item) => suma + (item.precio * item.cantidad), 0);
+        const productosHtml = carritoActual.map(item => `
+          <div class="flex justify-between gap-4 border-b border-gray-100 py-3 text-left">
+            <div>
+              <p class="font-bold text-gray-800">${escaparHtml(item.nombre)}</p>
+              <p class="text-sm text-gray-500">Cantidad: ${item.cantidad}</p>
+            </div>
+            <div class="text-right">
+              <p class="font-bold text-emerald-600">$${(item.precio * item.cantidad).toFixed(2)}</p>
+              <button
+                type="button"
+                class="btn-remove-cart mt-2 text-xs font-bold text-red-500 hover:text-red-700"
+                data-id="${item.id}">
+                Quitar
+              </button>
+            </div>
+          </div>
+        `).join('');
+
+        Swal.fire({
+          title: 'Tu carrito',
+          html: `
+            <div class="max-h-96 overflow-y-auto">
+              ${productosHtml}
+              <div class="flex justify-between pt-4 text-lg">
+                <span class="font-bold">Total</span>
+                <span class="font-black text-emerald-600">$${total.toFixed(2)}</span>
+              </div>
+              <div class="flex justify-center gap-4 mt-6">
+                <button id="btn-cerrar-modal" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+                  Cerrar
+                </button>
+                <button id="btn-comprar" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded font-bold">
+                  Finalizar Compra
+                </button>
+              </div>
+            </div>
+          `,
+          showConfirmButton: false,
+          width: 520,
+          didOpen: () => {
+            document.getElementById('btn-cerrar-modal')?.addEventListener('click', () => {
+              Swal.close();
+            });
+
+            document.getElementById('btn-comprar')?.addEventListener('click', async () => {
+              const carritoActual = cart.get();
+
+              if (carritoActual.length === 0) {
+                Swal.fire('Carrito vacío', 'Agrega algunos productos primero', 'warning');
+                return;
+              }
+
+              const itemsCompra = carritoActual.map(item => ({
+                id: item.id,
+                cantidad: item.cantidad
+              }));
+
+              try {
+                const token = localStorage.getItem('kimstore_token');
+                const response = await fetch(`${API_URL}/comprar`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                  },
+                  body: JSON.stringify(itemsCompra)
+                });
+
+                if (!response.ok) {
+                  const textoError = await response.text();
+                  let errorData: { error?: string } = {};
+
+                  try {
+                    errorData = textoError ? JSON.parse(textoError) : {};
+                  } catch {
+                    errorData = {};
+                  }
+
+                  throw new Error(errorData.error || `Error al procesar la compra (${response.status})`);
+                }
+
+                limpiarCarrito();
+
+                Swal.fire({
+                  icon: 'success',
+                  title: '¡Compra exitosa!',
+                  text: 'Gracias por tu preferencia en KimStore.',
+                }).then(() => {
+                  window.location.reload();
+                });
+              } catch (error) {
+                Swal.fire(
+                  'Error en la compra',
+                  error instanceof Error ? error.message : 'No se pudo procesar la compra',
+                  'error'
+                );
+              }
+            });
+
+            document.querySelectorAll('.btn-remove-cart').forEach(boton => {
+              boton.addEventListener('click', () => {
+                const id = Number((boton as HTMLButtonElement).getAttribute('data-id'));
+                eliminarDelCarrito(id);
+                Swal.close();
+                cartButton.click();
+              });
+            });
+          }
+        });
+      });
 
       cargarProductos();
     </script>

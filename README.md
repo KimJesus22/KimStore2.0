@@ -6,6 +6,8 @@ El proyecto separa responsabilidades entre un backend robusto con **Java + Sprin
 
 Actualmente el sistema evoluciona hacia una arquitectura más profesional, incorporando una capa de servicios, DTOs para separar la entrada de datos de las entidades JPA, validaciones declarativas con `jakarta.validation`, búsqueda por nombre, paginación desde el backend y carga de imágenes con Cloudinary.
 
+También incorpora un flujo inicial de e-commerce: carrito persistente en el navegador, modal de resumen, eliminación de productos solo del carrito y finalización de compra con descuento automático de stock en el backend.
+
 ---
 
 ## 🛠️ Tecnologías Utilizadas
@@ -31,6 +33,7 @@ Actualmente el sistema evoluciona hacia una arquitectura más profesional, incor
 | 🪪 **JWT** | Autenticación stateless mediante tokens Bearer |
 | 🔒 **BCrypt** | Encriptación segura de contraseñas de administradores |
 | 🌍 **CORS configurado** | Permite comunicación entre Astro local/Vercel y Spring Boot |
+| 🛒 **Endpoint de compra** | Procesa carritos y descuenta stock de forma transaccional |
 
 ### 🎨 Frontend - `pc-frontend`
 
@@ -47,6 +50,8 @@ Actualmente el sistema evoluciona hacia una arquitectura más profesional, incor
 | 🖼️ **FormData + Blob** | Envío de DTO JSON e imagen opcional en una sola petición |
 | 🔑 **LocalStorage** | Almacenamiento del token JWT del administrador |
 | 🚪 **Login Astro** | Pantalla `/login` para iniciar sesión como administrador |
+| 🧠 **Nano Stores** | Estado global ligero para el carrito |
+| 💾 **@nanostores/persistent** | Persistencia del carrito en `localStorage` |
 
 ---
 
@@ -160,6 +165,7 @@ Como el frontend se ejecuta en Astro con salida estática, la carga del catálog
 | `PUT` | `/api/productos/{id}` | Actualiza datos básicos usando `application/json` desde la edición rápida |
 | `DELETE` | `/api/productos/{id}` | Elimina un producto por ID |
 | `POST` | `/api/auth/login` | Valida credenciales y devuelve un token JWT |
+| `POST` | `/api/productos/comprar` | Procesa el carrito, valida stock y descuenta inventario |
 
 ### Endpoints públicos y protegidos
 
@@ -170,6 +176,7 @@ Como el frontend se ejecuta en Astro con salida estática, la carga del catálog
 | `POST /api/productos` | Requiere `Authorization: Bearer <token>` |
 | `PUT /api/productos/{id}` | Requiere `Authorization: Bearer <token>` |
 | `DELETE /api/productos/{id}` | Requiere `Authorization: Bearer <token>` |
+| `POST /api/productos/comprar` | Público para el flujo de compra actual |
 
 Ejemplo de login:
 
@@ -196,6 +203,34 @@ Ejemplo de operación protegida:
 ```http
 DELETE /api/productos/1
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+```
+
+Ejemplo de compra:
+
+```http
+POST /api/productos/comprar
+Content-Type: application/json
+
+[
+  { "id": 1, "cantidad": 2 },
+  { "id": 5, "cantidad": 1 }
+]
+```
+
+Respuesta exitosa:
+
+```json
+{
+  "mensaje": "Compra procesada con exito"
+}
+```
+
+Si no hay stock suficiente, el backend responde `400`:
+
+```json
+{
+  "error": "No hay suficiente stock para: Laptop HP Pavilion"
+}
 ```
 
 ### Parámetros de consulta
@@ -321,13 +356,17 @@ pc-backend/
     │   └── SecurityConfig.java
     └── dto/
         ├── AuthResponse.java
+        ├── ItemCompraDTO.java
         ├── LoginRequest.java
         └── ProductoDTO.java
 
 pc-frontend/
-└── src/pages/
-    ├── index.astro
-    └── login.astro
+└── src/
+    ├── pages/
+    │   ├── index.astro
+    │   └── login.astro
+    └── store/
+        └── cartStore.js
 ```
 
 ---
@@ -628,6 +667,45 @@ Spring Security permite la operación protegida
 
 En el frontend, `ProductForm.astro` envía el token al crear productos. La vista principal `index.astro` también adjunta el token al editar y eliminar productos.
 
+### Flujo de carrito y compra
+
+```text
+Usuario
+  ↓
+Añadir al carrito desde una tarjeta
+  ↓
+cartStore.js con persistentAtom
+  ↓
+localStorage.kimstore_cart
+  ↓
+Modal del carrito
+  ↓
+Quitar producto solo del carrito o Finalizar Compra
+  ↓
+POST /api/productos/comprar
+  ↓
+ProductoController.procesarCompra()
+  ↓
+Validación de stock por producto
+  ↓
+Descuento de stock con @Transactional
+  ↓
+Respuesta de éxito o error de stock
+  ↓
+limpiarCarrito() y recarga para mostrar inventario actualizado
+```
+
+El carrito vive en el navegador y no modifica la base de datos hasta que el usuario presiona **Finalizar Compra**. El botón **Quitar** elimina productos únicamente de `kimstore_cart`; no borra productos de la tienda ni llama al endpoint `DELETE`.
+
+El backend recibe el carrito mediante `ItemCompraDTO`, que contiene solo los datos mínimos necesarios para procesar la compra:
+
+```java
+public record ItemCompraDTO(
+    Long id,
+    int cantidad
+) {}
+```
+
 ### Flujo de creación y actualización
 
 ```text
@@ -737,6 +815,10 @@ ProductCard muestra la imagen o un placeholder
 - ✅ **Autenticación stateless:** Spring Security no crea sesiones y valida cada petición protegida con `Authorization: Bearer <token>`.
 - ✅ **Contraseñas encriptadas:** los administradores se guardan con BCrypt, no en texto plano.
 - ✅ **CORS explícito:** el backend permite únicamente los orígenes esperados del frontend local y desplegado.
+- ✅ **Carrito persistente:** Nano Stores guarda el carrito en `localStorage` con la llave `kimstore_cart`.
+- ✅ **Compra transaccional:** `@Transactional` evita compras parciales si un producto no tiene stock suficiente.
+- ✅ **Descuento de inventario:** `/api/productos/comprar` resta stock solo cuando la compra es válida.
+- ✅ **Separación carrito/tienda:** quitar productos del carrito no elimina productos del inventario.
 - ✅ **Seguridad en dependencias:** `pnpm install --ignore-scripts` limita la ejecución automática de scripts externos durante la instalación.
 - ✅ **Documentación de configuración:** las credenciales se muestran como placeholders para evitar exposición accidental.
 
@@ -839,6 +921,56 @@ http://localhost:4321/?buscar=laptop&page=0
 
 ---
 
+## 🛒 Carrito y Compra
+
+El frontend incluye un carrito persistente para simular el flujo inicial de una tienda en línea.
+
+### Frontend
+
+- `src/store/cartStore.js` crea un store persistente con `persistentAtom`.
+- El carrito se guarda en el navegador bajo la llave `kimstore_cart`.
+- `agregarAlCarrito(producto)` agrega productos o incrementa cantidad si ya existen.
+- `eliminarDelCarrito(productoId)` quita un producto solo del carrito.
+- `limpiarCarrito()` vacía el carrito después de una compra exitosa.
+- `index.astro` muestra un carrito flotante con contador reactivo.
+- El modal del carrito permite revisar productos, quitar artículos y finalizar compra.
+
+### Backend
+
+- `ItemCompraDTO` representa cada producto comprado con `id` y `cantidad`.
+- `ProductoController.procesarCompra()` recibe la lista del carrito.
+- El backend valida que cada producto exista.
+- Si no hay stock suficiente, responde con error y no completa la compra.
+- Si todo está correcto, descuenta el stock de cada producto.
+
+Ejemplo del carrito guardado en el navegador:
+
+```json
+[
+  {
+    "id": 1,
+    "nombre": "Laptop HP Pavilion",
+    "precio": 15000,
+    "cantidad": 2
+  }
+]
+```
+
+Payload enviado al backend:
+
+```json
+[
+  {
+    "id": 1,
+    "cantidad": 2
+  }
+]
+```
+
+> Nota técnica: el store actual está en `cartStore.js`. Como el proyecto usa TypeScript, una mejora natural es migrarlo a `cartStore.ts` y tipar explícitamente `ProductoCarrito` para mantener consistencia con el resto del frontend.
+
+---
+
 ## 🧠 Estado Actual del Proyecto
 
 KimStore 2.0 ya cuenta con:
@@ -870,6 +1002,13 @@ KimStore 2.0 ya cuenta con:
 - ✅ `SecurityConfig` con rutas públicas/protegidas, CORS y sesión stateless.
 - ✅ Usuario administrador inicial `kim` con contraseña `123456` para desarrollo.
 - ✅ Operaciones protegidas con header `Authorization: Bearer <token>`.
+- ✅ Store de carrito persistente con Nano Stores.
+- ✅ Botón **Añadir al carrito** en tarjetas del catálogo.
+- ✅ Carrito flotante con contador reactivo.
+- ✅ Modal de carrito con productos, cantidades, subtotales y total general.
+- ✅ Botón **Quitar** para remover productos solo del carrito.
+- ✅ Botón **Finalizar Compra** conectado al backend.
+- ✅ Descuento de stock después de compra exitosa.
 
 ---
 
@@ -884,6 +1023,10 @@ KimStore 2.0 ya cuenta con:
 - 🔐 Mover `jwt.secret` a variable de entorno (`JWT_SECRET`) antes de un despliegue público serio.
 - 🚪 Mostrar/ocultar acciones del CRUD según exista sesión activa en el frontend.
 - 📦 Separar lógica frontend en archivos TypeScript dedicados.
+- 🔷 Migrar `src/store/cartStore.js` a `cartStore.ts` con tipos explícitos para el carrito.
+- 🎨 Mejorar visualmente `/login` con Tailwind y añadir flujo de registro/creación de usuarios.
+- 🧾 Crear una página dedicada `/carrito` o checkout completo en lugar de depender solo de SweetAlert.
+- 🧮 Permitir aumentar/disminuir cantidades desde el modal del carrito.
 - 🧪 Agregar pruebas unitarias para service y controller.
 - 🔢 Agregar selector de tamaño de página (`size`) en la interfaz.
 - 🚀 Desplegar backend en Render y conectar el frontend al dominio público de la API.
@@ -894,4 +1037,4 @@ KimStore 2.0 ya cuenta con:
 
 **KimStore 2.0** demuestra una implementación full stack moderna para la administración de inventario de computadoras. Su estructura como monorepo facilita el desarrollo coordinado entre frontend y backend, mientras que Spring Boot, MariaDB, Astro, TypeScript y Tailwind CSS ofrecen una base sólida para un sistema escalable, mantenible y presentable en un portafolio profesional.
 
-Con la incorporación de `ProductoService`, `ProductoDTO`, validaciones con `@Valid`, búsqueda por nombre, paginación con Spring Data, carga de imágenes con Cloudinary, autenticación con Spring Security + JWT y configuración por variables de entorno, el proyecto deja de ser solo un CRUD básico y empieza a tomar forma de una aplicación con arquitectura limpia, preparada para crecer hacia funcionalidades más avanzadas como catálogo, carrito, usuarios, panel administrativo y despliegue real en la nube.
+Con la incorporación de `ProductoService`, `ProductoDTO`, validaciones con `@Valid`, búsqueda por nombre, paginación con Spring Data, carga de imágenes con Cloudinary, autenticación con Spring Security + JWT, carrito persistente, finalización de compra con descuento de stock y configuración por variables de entorno, el proyecto deja de ser solo un CRUD básico y empieza a tomar forma de una aplicación con arquitectura limpia, preparada para crecer hacia funcionalidades más avanzadas como catálogo, checkout, usuarios, panel administrativo y despliegue real en la nube.

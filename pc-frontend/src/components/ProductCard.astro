@@ -23,6 +23,14 @@ const { producto } = Astro.props;
     <p class="text-3xl font-black text-emerald-500 mb-2">${producto.precio}</p>
     <p class="text-xs text-gray-400 font-medium tracking-wide uppercase">Stock: {producto.stock} unidades</p>
 
+    <button
+      class="btn-add-cart w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex justify-center items-center gap-2"
+      data-producto={JSON.stringify(producto)}
+    >
+      <span>Añadir al carrito</span>
+      <span>🛒</span>
+    </button>
+
     <div class="mt-4 flex gap-4 border-t border-gray-100 pt-4">
       <button class="text-sm text-blue-500 hover:text-blue-700 font-semibold flex items-center gap-1 btn-editar"
         data-id={producto.id}
@@ -40,3 +48,29 @@ const { producto } = Astro.props;
     </div>
   </div>
 </div>
+
+<script>
+  import { agregarAlCarrito } from '../store/cartStore.js';
+  import Swal from 'sweetalert2';
+
+  const botonesCarrito = document.querySelectorAll('.btn-add-cart');
+
+  botonesCarrito.forEach(boton => {
+    boton.addEventListener('click', () => {
+      const producto = JSON.parse(boton.getAttribute('data-producto') || '{}');
+
+      agregarAlCarrito(producto);
+
+      Swal.fire({
+        toast: true,
+        position: 'bottom-end',
+        icon: 'success',
+        title: '¡Agregado al carrito!',
+        showConfirmButton: false,
+        timer: 1500,
+        background: '#333',
+        color: '#fff'
+      });
+    });
+  });
+</script>
