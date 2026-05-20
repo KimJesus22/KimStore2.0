@@ -126,7 +126,10 @@ import ProductForm from '../components/ProductForm.astro';
               const nuevoPrecio = parseFloat(nuevoPrecioStr);
               await fetch(`${API_URL}/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${localStorage.getItem('kimstore_token')}`
+                },
                 body: JSON.stringify({
                   nombre: t.getAttribute('data-nombre'),
                   descripcion: t.getAttribute('data-desc'),
@@ -144,7 +147,12 @@ import ProductForm from '../components/ProductForm.astro';
             const t = e.currentTarget as HTMLButtonElement;
             const id = t.getAttribute('data-id');
             if (confirm('¿Eliminar producto?')) {
-              await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+              await fetch(`${API_URL}/${id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('kimstore_token')}`
+                }
+              });
               window.location.reload();
             }
           });

@@ -27,6 +27,10 @@ Actualmente el sistema evoluciona hacia una arquitectura más profesional, incor
 | 📄 **Spring Data Page** | Respuestas paginadas con `Page`, `PageRequest` y `Pageable` |
 | ☁️ **Cloudinary** | Almacenamiento externo de imágenes de productos |
 | 📎 **MultipartFile** | Recepción de archivos mediante `multipart/form-data` |
+| 🔐 **Spring Security** | Protección de rutas privadas del CRUD |
+| 🪪 **JWT** | Autenticación stateless mediante tokens Bearer |
+| 🔒 **BCrypt** | Encriptación segura de contraseñas de administradores |
+| 🌍 **CORS configurado** | Permite comunicación entre Astro local/Vercel y Spring Boot |
 
 ### 🎨 Frontend - `pc-frontend`
 
@@ -41,6 +45,8 @@ Actualmente el sistema evoluciona hacia una arquitectura más profesional, incor
 | 🔎 **URLSearchParams** | Lectura de `buscar` y `page` desde la URL |
 | 🍬 **SweetAlert2** | Alertas visuales para respuestas del formulario |
 | 🖼️ **FormData + Blob** | Envío de DTO JSON e imagen opcional en una sola petición |
+| 🔑 **LocalStorage** | Almacenamiento del token JWT del administrador |
+| 🚪 **Login Astro** | Pantalla `/login` para iniciar sesión como administrador |
 
 ---
 
@@ -106,6 +112,30 @@ El endpoint principal devuelve un `Page<Producto>`, por lo que la respuesta incl
 
 El backend usa `@Valid` en el controller y restricciones como `@NotBlank`, `@DecimalMin` y `@Min` para impedir productos inválidos antes de guardarlos en MariaDB.
 
+#### **Seguridad - Login, JWT y roles**
+
+El backend incorpora Spring Security con una configuración stateless basada en JWT. Las rutas públicas permiten consultar productos y acceder al login, mientras que las operaciones sensibles del CRUD requieren autenticación.
+
+El flujo de seguridad está compuesto por:
+
+- `Usuario`: entidad JPA para administradores.
+- `UsuarioRepository`: búsqueda de usuarios por `username`.
+- `ApplicationConfig`: configuración de `UserDetailsService`, `AuthenticationProvider`, `AuthenticationManager`, `PasswordEncoder` y usuario administrador inicial.
+- `SecurityConfig`: reglas de autorización, CORS, sesión stateless y registro del filtro JWT.
+- `JwtService`: generación y validación de tokens.
+- `JwtAuthenticationFilter`: lectura del header `Authorization: Bearer <token>`.
+- `AuthController`: endpoint de login en `/api/auth/login`.
+
+Actualmente, el backend inicializa un administrador de desarrollo:
+
+```text
+usuario: kim
+contraseña: 123456
+rol: ROLE_ADMIN
+```
+
+> Esta credencial facilita las pruebas locales. En un despliegue real debe reemplazarse por un mecanismo seguro de creación de administradores y secretos configurados por entorno.
+
 ### Frontend: consumo de API
 
 El frontend construido con Astro consume la API del backend mediante `fetch`, utilizando los métodos HTTP estándar:
@@ -127,7 +157,46 @@ Como el frontend se ejecuta en Astro con salida estática, la carga del catálog
 | `GET` | `/api/productos?buscar=hp&page=0&size=6` | Busca por nombre y pagina resultados |
 | `POST` | `/api/productos` | Crea un producto usando `multipart/form-data` con `ProductoDTO` e imagen opcional |
 | `PUT` | `/api/productos/{id}` | Actualiza un producto usando `multipart/form-data` con `ProductoDTO` e imagen opcional |
+| `PUT` | `/api/productos/{id}` | Actualiza datos básicos usando `application/json` desde la edición rápida |
 | `DELETE` | `/api/productos/{id}` | Elimina un producto por ID |
+| `POST` | `/api/auth/login` | Valida credenciales y devuelve un token JWT |
+
+### Endpoints públicos y protegidos
+
+| Endpoint | Acceso |
+| --- | --- |
+| `GET /api/productos/**` | Público |
+| `POST /api/auth/login` | Público |
+| `POST /api/productos` | Requiere `Authorization: Bearer <token>` |
+| `PUT /api/productos/{id}` | Requiere `Authorization: Bearer <token>` |
+| `DELETE /api/productos/{id}` | Requiere `Authorization: Bearer <token>` |
+
+Ejemplo de login:
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "username": "kim",
+  "password": "123456"
+}
+```
+
+Respuesta:
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+Ejemplo de operación protegida:
+
+```http
+DELETE /api/productos/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+```
 
 ### Parámetros de consulta
 
@@ -235,6 +304,32 @@ KimStore/
             └── producto.ts
 ```
 
+### Actualización de estructura por autenticación
+
+Con la incorporación de login y JWT, el monorepo también contiene estos archivos relevantes:
+
+```text
+pc-backend/
+└── src/main/java/com/kimstore/pc_backend/
+    ├── AuthController.java
+    ├── Usuario.java
+    ├── UsuarioRepository.java
+    ├── config/
+    │   ├── ApplicationConfig.java
+    │   ├── JwtAuthenticationFilter.java
+    │   ├── JwtService.java
+    │   └── SecurityConfig.java
+    └── dto/
+        ├── AuthResponse.java
+        ├── LoginRequest.java
+        └── ProductoDTO.java
+
+pc-frontend/
+└── src/pages/
+    ├── index.astro
+    └── login.astro
+```
+
 ---
 
 ## ⚙️ Instrucciones de Instalación
@@ -286,6 +381,9 @@ spring.jpa.show-sql=${SHOW_SQL:true}
 cloudinary.cloud_name=${CLOUDINARY_CLOUD_NAME:}
 cloudinary.api_key=${CLOUDINARY_API_KEY:}
 cloudinary.api_secret=${CLOUDINARY_API_SECRET:}
+
+jwt.secret=estaEsUnaClaveSecretaMuyLargaYComplejaParaProtegerMiAPIKimStore2026
+jwt.expiration=86400000
 ```
 
 Esto significa que Spring Boot primero intentará leer variables de entorno. Si no existen, usará los valores locales después de `:`.
@@ -303,6 +401,15 @@ DB_PASSWORD=KimJesus21
 ```
 
 > Por seguridad, no subas credenciales reales al repositorio. Las contraseñas locales y de producción deben vivir fuera del código.
+
+Para producción, la clave JWT también debe tratarse como secreto. La versión actual define `jwt.secret` y `jwt.expiration` en `application.properties`; como mejora recomendada, puede migrarse a variables de entorno:
+
+```properties
+jwt.secret=${JWT_SECRET:clave-local-larga-para-desarrollo}
+jwt.expiration=${JWT_EXPIRATION:86400000}
+```
+
+El valor de `JWT_SECRET` debe ser largo y suficientemente aleatorio para firmar tokens HS256.
 
 ---
 
@@ -376,6 +483,8 @@ En Render, configura estas variables en el servicio del backend:
 | `CLOUDINARY_CLOUD_NAME` | Nombre del cloud de Cloudinary |
 | `CLOUDINARY_API_KEY` | API key de Cloudinary |
 | `CLOUDINARY_API_SECRET` | API secret de Cloudinary |
+| `JWT_SECRET` | Clave secreta larga para firmar tokens JWT |
+| `JWT_EXPIRATION` | Duración del token en milisegundos |
 
 Ejemplo:
 
@@ -389,6 +498,8 @@ SHOW_SQL=false
 CLOUDINARY_CLOUD_NAME=TU_CLOUD_NAME
 CLOUDINARY_API_KEY=TU_API_KEY
 CLOUDINARY_API_SECRET=TU_API_SECRET
+JWT_SECRET=UNA_CLAVE_MUY_LARGA_Y_SEGURA
+JWT_EXPIRATION=86400000
 ```
 
 ### Separación dev/prod
@@ -444,6 +555,27 @@ CLOUDINARY_API_KEY=...
 CLOUDINARY_API_SECRET=...
 ```
 
+### CORS para frontend local y producción
+
+`SecurityConfig` habilita CORS para permitir que Astro consuma el backend desde distintos orígenes:
+
+```text
+http://localhost:4321
+https://kim-store2-0.vercel.app
+```
+
+También permite los métodos necesarios para el CRUD y el preflight del navegador:
+
+```text
+GET, POST, PUT, DELETE, OPTIONS
+```
+
+Y acepta headers clave para autenticación:
+
+```text
+Authorization, Content-Type
+```
+
 ---
 
 ## 🔌 Flujo de Comunicación
@@ -467,6 +599,34 @@ MariaDB
 El frontend actúa como cliente de la API: captura datos del usuario, valida estructuras mediante TypeScript y envía solicitudes HTTP al backend. El backend procesa las operaciones del inventario y persiste la información en MariaDB.
 
 En producción, la capa de persistencia apunta a Aiven PostgreSQL mediante variables de entorno, sin modificar el código fuente.
+
+### Flujo de autenticación JWT
+
+```text
+Administrador
+  ↓
+/login en Astro
+  ↓ POST /api/auth/login
+LoginRequest(username, password)
+  ↓
+AuthenticationManager + UsuarioRepository
+  ↓
+BCrypt valida la contraseña encriptada
+  ↓
+JwtService genera token
+  ↓
+AuthResponse(token)
+  ↓
+localStorage.kimstore_token
+  ↓
+Authorization: Bearer <token> en POST / PUT / DELETE
+  ↓
+JwtAuthenticationFilter valida el token
+  ↓
+Spring Security permite la operación protegida
+```
+
+En el frontend, `ProductForm.astro` envía el token al crear productos. La vista principal `index.astro` también adjunta el token al editar y eliminar productos.
 
 ### Flujo de creación y actualización
 
@@ -493,6 +653,22 @@ MariaDB
 ```
 
 Este flujo evita que el frontend trabaje directamente con la entidad JPA, reduciendo acoplamiento y dejando el backend preparado para crecer con reglas de negocio más complejas.
+
+Además, el backend acepta una actualización rápida con JSON:
+
+```text
+index.astro
+  ↓
+fetch(PUT /api/productos/{id})
+Content-Type: application/json
+Authorization: Bearer <token>
+  ↓
+ProductoController.actualizarJson()
+  ↓
+ProductoService.actualizar()
+```
+
+Esto permite editar datos básicos sin subir imagen, mientras que el flujo `multipart/form-data` queda disponible para actualizaciones con archivo.
 
 ### Flujo de búsqueda y paginación
 
@@ -557,6 +733,10 @@ ProductCard muestra la imagen o un placeholder
 - ✅ **Persistencia desacoplada:** Spring Data JPA abstrae el acceso a MariaDB.
 - ✅ **Configuración por entorno:** `application.properties` usa `${VARIABLE:valor_por_defecto}` para separar desarrollo y producción.
 - ✅ **Credenciales fuera del repositorio:** las contraseñas se configuran desde IntelliJ, terminal, Render o el proveedor de nube.
+- ✅ **Rutas protegidas:** crear, editar y eliminar productos requiere autenticación con JWT.
+- ✅ **Autenticación stateless:** Spring Security no crea sesiones y valida cada petición protegida con `Authorization: Bearer <token>`.
+- ✅ **Contraseñas encriptadas:** los administradores se guardan con BCrypt, no en texto plano.
+- ✅ **CORS explícito:** el backend permite únicamente los orígenes esperados del frontend local y desplegado.
 - ✅ **Seguridad en dependencias:** `pnpm install --ignore-scripts` limita la ejecución automática de scripts externos durante la instalación.
 - ✅ **Documentación de configuración:** las credenciales se muestran como placeholders para evitar exposición accidental.
 
@@ -602,10 +782,27 @@ Ejemplo conceptual de la petición:
 
 ```text
 POST /api/productos
+Authorization: Bearer <token>
 Content-Type: multipart/form-data
 
 producto: Blob JSON con nombre, descripcion, precio, stock, imageUrl
 imagen: archivo opcional
+```
+
+Para edición básica sin cambiar imagen, el frontend puede enviar JSON:
+
+```text
+PUT /api/productos/{id}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "nombre": "Laptop HP",
+  "descripcion": "Equipo actualizado",
+  "precio": 15000,
+  "stock": 5,
+  "imageUrl": "https://res.cloudinary.com/..."
+}
 ```
 
 ---
@@ -666,6 +863,13 @@ KimStore 2.0 ya cuenta con:
 - ✅ Carga dinámica del catálogo desde el cliente para respetar query params.
 - ✅ Preparación para despliegue en Render con Aiven PostgreSQL.
 - ✅ Variables de entorno para separar base de datos local y producción.
+- ✅ Entidad `Usuario` y `UsuarioRepository` para administradores.
+- ✅ Login en `/login` desde Astro.
+- ✅ Endpoint `POST /api/auth/login` para generar JWT.
+- ✅ `JwtService` y `JwtAuthenticationFilter` para validar tokens.
+- ✅ `SecurityConfig` con rutas públicas/protegidas, CORS y sesión stateless.
+- ✅ Usuario administrador inicial `kim` con contraseña `123456` para desarrollo.
+- ✅ Operaciones protegidas con header `Authorization: Bearer <token>`.
 
 ---
 
@@ -676,7 +880,9 @@ KimStore 2.0 ya cuenta con:
 - 🔍 Agregar filtros avanzados por precio, stock o categoría.
 - 🖼️ Agregar edición visual de imagen desde el modal o flujo de actualización.
 - 🧹 Eliminar imágenes antiguas de Cloudinary cuando se reemplacen o borren productos.
-- 🔐 Preparar autenticación y roles para un futuro panel administrativo.
+- 🔐 Reemplazar el administrador de desarrollo por un flujo seguro de registro/gestión de usuarios.
+- 🔐 Mover `jwt.secret` a variable de entorno (`JWT_SECRET`) antes de un despliegue público serio.
+- 🚪 Mostrar/ocultar acciones del CRUD según exista sesión activa en el frontend.
 - 📦 Separar lógica frontend en archivos TypeScript dedicados.
 - 🧪 Agregar pruebas unitarias para service y controller.
 - 🔢 Agregar selector de tamaño de página (`size`) en la interfaz.
@@ -688,4 +894,4 @@ KimStore 2.0 ya cuenta con:
 
 **KimStore 2.0** demuestra una implementación full stack moderna para la administración de inventario de computadoras. Su estructura como monorepo facilita el desarrollo coordinado entre frontend y backend, mientras que Spring Boot, MariaDB, Astro, TypeScript y Tailwind CSS ofrecen una base sólida para un sistema escalable, mantenible y presentable en un portafolio profesional.
 
-Con la incorporación de `ProductoService`, `ProductoDTO`, validaciones con `@Valid`, búsqueda por nombre, paginación con Spring Data, carga de imágenes con Cloudinary y configuración por variables de entorno, el proyecto deja de ser solo un CRUD básico y empieza a tomar forma de una aplicación con arquitectura limpia, preparada para crecer hacia funcionalidades más avanzadas como catálogo, carrito, usuarios, panel administrativo y despliegue real en la nube.
+Con la incorporación de `ProductoService`, `ProductoDTO`, validaciones con `@Valid`, búsqueda por nombre, paginación con Spring Data, carga de imágenes con Cloudinary, autenticación con Spring Security + JWT y configuración por variables de entorno, el proyecto deja de ser solo un CRUD básico y empieza a tomar forma de una aplicación con arquitectura limpia, preparada para crecer hacia funcionalidades más avanzadas como catálogo, carrito, usuarios, panel administrativo y despliegue real en la nube.

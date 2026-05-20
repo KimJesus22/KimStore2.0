@@ -51,10 +51,21 @@
     }
 
     try {
+      const token = localStorage.getItem('kimstore_token');
+
+      if (!token) {
+        Swal.fire('Error', 'Debes iniciar sesión para hacer esto', 'error');
+        setTimeout(() => window.location.href = '/login', 2000);
+        return;
+      }
+
       // OJO: Al usar FormData, NO debes poner "Content-Type" en los headers,
       // el navegador lo calcula automáticamente.
       const respuesta = await fetch(API_URL, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formData
       });
 

@@ -1,0 +1,102 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Login | KimStore 2.0">
+  <div class="min-h-screen bg-gray-100 flex items-center justify-center">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">KimStore 2.0 💻</h1>
+        <p class="text-gray-500 mt-2">Acceso de Administrador</p>
+      </div>
+
+      <form id="loginForm" class="space-y-6">
+        <div>
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="username">
+            Usuario
+          </label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            class="w-full px-4 py-3 rounded-lg bg-gray-50 border focus:border-blue-500 focus:bg-white focus:outline-none"
+            placeholder="Ingresa tu usuario"
+            required
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
+            Contraseña
+          </label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            class="w-full px-4 py-3 rounded-lg bg-gray-50 border focus:border-blue-500 focus:bg-white focus:outline-none"
+            placeholder="••••••••"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="w-full block bg-blue-500 hover:bg-blue-400 focus:bg-blue-400 text-white font-semibold rounded-lg px-4 py-3 mt-6 transition-colors"
+        >
+          Iniciar Sesión
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    import Swal from 'sweetalert2';
+
+    const loginForm = document.getElementById('loginForm');
+    const usernameInput = document.getElementById('username') as HTMLInputElement;
+    const passwordInput = document.getElementById('password') as HTMLInputElement;
+    const API_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+      ? 'http://localhost:8080/api/auth/login'
+      : 'https://kimstore-api-backend.onrender.com/api/auth/login';
+
+    loginForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = usernameInput.value;
+      const password = passwordInput.value;
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Usuario o contraseña incorrectos');
+        }
+
+        const data = await response.json();
+        localStorage.setItem('kimstore_token', data.token);
+
+        Swal.fire({
+          icon: 'success',
+          title: '¡Bienvenido!',
+          text: 'Sesión iniciada correctamente',
+          timer: 1500,
+          showConfirmButton: false,
+        }).then(() => {
+          window.location.href = '/';
+        });
+      } catch (error) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Acceso Denegado',
+          text: error instanceof Error ? error.message : 'No se pudo iniciar sesión',
+        });
+      }
+    });
+  </script>
+</Layout>

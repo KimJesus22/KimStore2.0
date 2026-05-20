@@ -76,6 +76,14 @@ public class ProductoController {
         return productoService.actualizar(id, productoConImagen);
     }
 
+    @PutMapping(path = "/{id}", consumes = {"application/json"})
+    public Producto actualizarJson(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductoDTO productoDto) {
+
+        return productoService.actualizar(id, productoDto);
+    }
+
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable Long id) {
         productoService.eliminar(id);
