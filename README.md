@@ -6,7 +6,7 @@ El proyecto separa responsabilidades entre un backend robusto con **Java + Sprin
 
 Actualmente el sistema evoluciona hacia una arquitectura más profesional, incorporando una capa de servicios, DTOs para separar la entrada de datos de las entidades JPA, validaciones declarativas con `jakarta.validation`, búsqueda por nombre, paginación desde el backend y carga de imágenes con Cloudinary.
 
-También incorpora un flujo inicial de e-commerce: carrito persistente en el navegador, modal de resumen, eliminación de productos solo del carrito y finalización de compra con descuento automático de stock en el backend.
+También incorpora un flujo inicial de e-commerce: carrito persistente en el navegador, modal de resumen, eliminación de productos solo del carrito, finalización de compra autenticada, descuento automático de stock e historial de pedidos por usuario.
 
 ---
 
@@ -33,7 +33,7 @@ También incorpora un flujo inicial de e-commerce: carrito persistente en el nav
 | 🪪 **JWT** | Autenticación stateless mediante tokens Bearer |
 | 🔒 **BCrypt** | Encriptación segura de contraseñas de administradores |
 | 🌍 **CORS configurado** | Permite comunicación entre Astro local/Vercel y Spring Boot |
-| 🛒 **Endpoint de compra** | Procesa carritos y descuenta stock de forma transaccional |
+| 🛒 **Endpoint de compra** | Procesa carritos, descuenta stock y registra pedidos de forma transaccional |
 
 ### 🎨 Frontend - `pc-frontend`
 
@@ -163,6 +163,7 @@ La navegación actual separa la experiencia pública y el panel de productos:
 - `/login`: inicio de sesión.
 - `/register`: creación de cuenta.
 - `/productos`: catálogo, carrito y panel de inventario.
+- `/mis-compras`: historial de pedidos del usuario autenticado.
 
 El frontend guarda dos llaves importantes en `localStorage`:
 
@@ -183,9 +184,11 @@ Con `kimstore_role`, la interfaz muestra u oculta acciones administrativas. Los 
 | `PUT` | `/api/productos/{id}` | Actualiza un producto usando `multipart/form-data` con `ProductoDTO` e imagen opcional |
 | `PUT` | `/api/productos/{id}` | Actualiza datos básicos usando `application/json` desde la edición rápida |
 | `DELETE` | `/api/productos/{id}` | Elimina un producto por ID |
+| `GET` | `/api/productos/dashboard/metrics` | Devuelve métricas del inventario para el dashboard admin |
 | `POST` | `/api/auth/login` | Valida credenciales y devuelve un token JWT |
 | `POST` | `/api/auth/register` | Crea un usuario nuevo con contraseña encriptada |
-| `POST` | `/api/productos/comprar` | Procesa el carrito, valida stock y descuenta inventario |
+| `POST` | `/api/pedidos/comprar` | Procesa el carrito autenticado, registra el pedido y descuenta inventario |
+| `GET` | `/api/pedidos/mis-compras` | Devuelve el historial de compras del usuario autenticado |
 
 ### Endpoints públicos y protegidos
 
@@ -194,10 +197,14 @@ Con `kimstore_role`, la interfaz muestra u oculta acciones administrativas. Los 
 | `GET /api/productos/**` | Público |
 | `POST /api/auth/login` | Público |
 | `POST /api/auth/register` | Público |
+| `GET /api/productos/dashboard/metrics` | Requiere `Authorization: Bearer <token>` y `ROLE_ADMIN` |
 | `POST /api/productos` | Requiere `Authorization: Bearer <token>` y `ROLE_ADMIN` |
 | `PUT /api/productos/{id}` | Requiere `Authorization: Bearer <token>` y `ROLE_ADMIN` |
 | `DELETE /api/productos/{id}` | Requiere `Authorization: Bearer <token>` y `ROLE_ADMIN` |
-| `POST /api/productos/comprar` | Público para el flujo de compra actual |
+| `POST /api/pedidos/comprar` | Requiere `Authorization: Bearer <token>` |
+| `GET /api/pedidos/mis-compras` | Requiere `Authorization: Bearer <token>` |
+
+> Nota: el endpoint anterior `POST /api/productos/comprar` fue reemplazado por `POST /api/pedidos/comprar` para poder asociar cada compra con el usuario autenticado y guardar historial.
 
 Ejemplo de login:
 
@@ -230,8 +237,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 Ejemplo de compra:
 
 ```http
-POST /api/productos/comprar
+POST /api/pedidos/comprar
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 [
   { "id": 1, "cantidad": 2 },
@@ -243,7 +251,7 @@ Respuesta exitosa:
 
 ```json
 {
-  "mensaje": "Compra procesada con exito"
+  "mensaje": "Compra registrada exitosamente"
 }
 ```
 
@@ -316,6 +324,10 @@ KimStore/
 │       │   │           └── pc_backend/
 │       │   │               ├── AuthController.java
 │       │   │               ├── PcBackendApplication.java
+│       │   │               ├── ItemPedido.java
+│       │   │               ├── Pedido.java
+│       │   │               ├── PedidoController.java
+│       │   │               ├── PedidoRepository.java
 │       │   │               ├── Producto.java
 │       │   │               ├── ProductoRepository.java
 │       │   │               ├── ProductoController.java
@@ -328,8 +340,11 @@ KimStore/
 │       │   │               │   └── SecurityConfig.java
 │       │   │               ├── dto/
 │       │   │               │   ├── AuthResponse.java
+│       │   │               │   ├── DashboardMetricsDTO.java
 │       │   │               │   ├── ItemCompraDTO.java
+│       │   │               │   ├── ItemPedidoDTO.java
 │       │   │               │   ├── LoginRequest.java
+│       │   │               │   ├── PedidoResponseDTO.java
 │       │   │               │   ├── ProductoDTO.java
 │       │   │               │   └── RegisterRequest.java
 │       │   │               └── service/
@@ -368,6 +383,7 @@ KimStore/
         ├── pages/
         │   ├── index.astro
         │   ├── login.astro
+        │   ├── mis-compras.astro
         │   ├── productos.astro
         │   └── register.astro
         ├── store/
@@ -386,6 +402,10 @@ Con la incorporación de login y JWT, el monorepo también contiene estos archiv
 pc-backend/
 └── src/main/java/com/kimstore/pc_backend/
     ├── AuthController.java
+    ├── ItemPedido.java
+    ├── Pedido.java
+    ├── PedidoController.java
+    ├── PedidoRepository.java
     ├── Usuario.java
     ├── UsuarioRepository.java
     ├── config/
@@ -395,8 +415,11 @@ pc-backend/
     │   └── SecurityConfig.java
     └── dto/
         ├── AuthResponse.java
+        ├── DashboardMetricsDTO.java
         ├── ItemCompraDTO.java
+        ├── ItemPedidoDTO.java
         ├── LoginRequest.java
+        ├── PedidoResponseDTO.java
         └── ProductoDTO.java
 
 pc-frontend/
@@ -405,6 +428,7 @@ pc-frontend/
     │   └── Layout.astro
     ├── pages/
     │   ├── index.astro
+    │   ├── mis-compras.astro
     │   ├── productos.astro
     │   ├── register.astro
     │   └── login.astro
@@ -728,13 +752,15 @@ Modal del carrito
   ↓
 Quitar producto solo del carrito o Finalizar Compra
   ↓
-POST /api/productos/comprar
+POST /api/pedidos/comprar
   ↓
-ProductoController.procesarCompra()
+PedidoController.procesarCompra()
   ↓
 Validación de stock por producto
   ↓
 Descuento de stock con @Transactional
+  ↓
+Creación de Pedido + ItemPedido
   ↓
 Respuesta de éxito o error de stock
   ↓
@@ -751,6 +777,26 @@ public record ItemCompraDTO(
     int cantidad
 ) {}
 ```
+
+Con el nuevo módulo de pedidos, cada compra queda asociada al usuario autenticado:
+
+```text
+Usuario autenticado
+  ↓
+Pedido(fecha, total, usuario)
+  ↓
+ItemPedido(productoId, nombreProducto, cantidad, precioUnitario)
+  ↓
+PedidoRepository
+  ↓
+GET /api/pedidos/mis-compras
+  ↓
+PedidoResponseDTO + ItemPedidoDTO
+  ↓
+/mis-compras en Astro
+```
+
+`ItemPedido` guarda una copia del nombre y precio unitario al momento de comprar. Esto permite que el historial conserve el ticket real aunque después cambie el nombre o precio del producto en el inventario.
 
 ### Flujo de creación y actualización
 
@@ -863,7 +909,7 @@ ProductCard muestra la imagen o un placeholder
 - ✅ **CORS explícito:** el backend permite únicamente los orígenes esperados del frontend local y desplegado.
 - ✅ **Carrito persistente:** Nano Stores guarda el carrito en `localStorage` con la llave `kimstore_cart`.
 - ✅ **Compra transaccional:** `@Transactional` evita compras parciales si un producto no tiene stock suficiente.
-- ✅ **Descuento de inventario:** `/api/productos/comprar` resta stock solo cuando la compra es válida.
+- ✅ **Descuento de inventario:** `/api/pedidos/comprar` resta stock y guarda el pedido solo cuando la compra es válida.
 - ✅ **Separación carrito/tienda:** quitar productos del carrito no elimina productos del inventario.
 - ✅ **Seguridad en dependencias:** `pnpm install --ignore-scripts` limita la ejecución automática de scripts externos durante la instalación.
 - ✅ **Documentación de configuración:** las credenciales se muestran como placeholders para evitar exposición accidental.
@@ -984,10 +1030,14 @@ El frontend incluye un carrito persistente para simular el flujo inicial de una 
 ### Backend
 
 - `ItemCompraDTO` representa cada producto comprado con `id` y `cantidad`.
-- `ProductoController.procesarCompra()` recibe la lista del carrito.
+- `PedidoController.procesarCompra()` recibe la lista del carrito.
 - El backend valida que cada producto exista.
 - Si no hay stock suficiente, responde con error y no completa la compra.
 - Si todo está correcto, descuenta el stock de cada producto.
+- `Pedido` registra fecha, total y usuario comprador.
+- `ItemPedido` guarda el detalle congelado de cada producto comprado.
+- `PedidoRepository` permite consultar pedidos por usuario ordenados del más reciente al más antiguo.
+- `GET /api/pedidos/mis-compras` devuelve el historial usando `PedidoResponseDTO` e `ItemPedidoDTO`.
 
 Ejemplo del carrito guardado en el navegador:
 
@@ -1009,6 +1059,25 @@ Payload enviado al backend:
   {
     "id": 1,
     "cantidad": 2
+  }
+]
+```
+
+Respuesta del historial de compras:
+
+```json
+[
+  {
+    "id": 7,
+    "fecha": "26/05/2026 09:00",
+    "total": 32000.0,
+    "items": [
+      {
+        "nombreProducto": "Laptop HP Pavilion",
+        "cantidad": 2,
+        "precioUnitario": 16000.0
+      }
+    ]
   }
 ]
 ```
@@ -1048,6 +1117,7 @@ KimStore 2.0 ya cuenta con:
 - ✅ `AuthResponse` devuelve `token` y `role`.
 - ✅ `JwtService` y `JwtAuthenticationFilter` para validar tokens.
 - ✅ `SecurityConfig` con rutas públicas, rutas protegidas por rol, CORS y sesión stateless.
+- ✅ Dashboard admin con métricas de inventario en `/api/productos/dashboard/metrics`.
 - ✅ Usuario administrador inicial `kim` con contraseña `123456` para desarrollo.
 - ✅ Operaciones protegidas con header `Authorization: Bearer <token>`.
 - ✅ Control visual por rol con `kimstore_role` en `localStorage`.
@@ -1060,6 +1130,10 @@ KimStore 2.0 ya cuenta con:
 - ✅ Botón **Quitar** para remover productos solo del carrito.
 - ✅ Botón **Finalizar Compra** conectado al backend.
 - ✅ Descuento de stock después de compra exitosa.
+- ✅ Entidades `Pedido` e `ItemPedido` para guardar historial de compras.
+- ✅ `PedidoRepository` para consultar compras por usuario.
+- ✅ `PedidoController` con compra autenticada e historial.
+- ✅ Página `/mis-compras` para mostrar pedidos del usuario.
 
 ---
 
