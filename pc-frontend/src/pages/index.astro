@@ -1,397 +1,56 @@
 ---
-import '../styles/global.css';
-import ProductForm from '../components/ProductForm.astro';
+import Layout from '../layouts/Layout.astro';
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title>KimStore - Dashboard Profesional</title>
-  </head>
-  <body class="bg-gray-50 font-sans p-8 max-w-6xl mx-auto">
-    <button id="cart-button" type="button" class="fixed top-6 right-6 bg-white p-3 rounded-full shadow-2xl z-50 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform border border-gray-100">
-      <span class="text-2xl">🛒</span>
-      <span id="cart-badge" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full hidden">
-        0
+<Layout title="Bienvenido | KimStore 2.0">
+  <style is:global>
+    #cart-badge,
+    .fixed.bottom-6.right-6 {
+      display: none !important;
+    }
+  </style>
+
+  <main class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-4xl mx-auto">
+      <span class="inline-block py-1 px-4 rounded-full bg-blue-100 text-blue-700 text-sm font-bold mb-6 tracking-wide uppercase">
+        KimStore 2.0
       </span>
-    </button>
 
-    <header class="mb-12">
-      <h1 class="text-4xl font-extrabold text-gray-900 mb-2">KimStore 2.0 💻</h1>
-      <p class="text-gray-500">Gestión de inventario en tiempo real.</p>
-    </header>
+      <h1 class="text-5xl md:text-7xl font-extrabold text-gray-900 tracking-tight mb-6">
+        El Futuro de tu <br class="hidden sm:block" />
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+          Setup Tecnológico
+        </span>
+      </h1>
 
-    <div class="mb-8 bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-      <form method="GET" action="/" class="w-full flex gap-4">
-        <input
-          type="text"
-          name="buscar"
-          id="buscar"
-          placeholder="Buscar computadora por nombre (ej. Asus, Laptop...)"
-          class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-6 py-3 rounded-lg transition-colors">
-          🔍 Buscar
-        </button>
-        <a id="limpiar-busqueda" href="/" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold px-6 py-3 rounded-lg transition-colors items-center">
-          ✖️ Limpiar
+      <p class="text-lg md:text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
+        Administra inventarios, descubre computadoras de alto rendimiento y gestiona tus compras con la plataforma más rápida y segura del mercado.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-5 justify-center items-center">
+        <a
+          href="/register"
+          class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white bg-blue-600 rounded-full shadow-lg hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+        >
+          Únete Ahora
+          <svg class="w-5 h-5 ml-2 -mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+          </svg>
         </a>
-      </form>
+
+        <a
+          href="/login"
+          class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold text-gray-800 bg-white border-2 border-gray-200 rounded-full shadow-sm hover:bg-gray-50 hover:border-gray-300 hover:-translate-y-1 transition-all duration-300"
+        >
+          Iniciar Sesión
+        </a>
+      </div>
     </div>
 
-    <main class="grid grid-cols-1 lg:grid-cols-3 gap-12">
-      <aside class="lg:col-span-1">
-        <ProductForm />
-      </aside>
-
-      <section class="lg:col-span-2">
-        <div id="estado-productos" class="rounded-xl border border-gray-200 bg-white p-6 text-gray-500">
-          Cargando productos...
-        </div>
-
-        <div id="productos-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
-
-        <div id="paginacion" class="mt-8 flex justify-center items-center gap-4"></div>
-      </section>
-    </main>
-
-    <script>
-      import { agregarAlCarrito, cart, eliminarDelCarrito, limpiarCarrito } from '../store/cartStore.js';
-      import Swal from 'sweetalert2';
-
-      interface Producto {
-        id: number;
-        nombre: string;
-        descripcion: string;
-        precio: number;
-        stock: number;
-        imageUrl?: string;
-      }
-
-      const API_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
-        ? 'http://localhost:8080/api/productos'
-        : 'https://kimstore-api-backend.onrender.com/api/productos';
-      const buscarInput = document.getElementById('buscar') as HTMLInputElement;
-      const limpiarBusqueda = document.getElementById('limpiar-busqueda') as HTMLAnchorElement;
-      const estadoProductos = document.getElementById('estado-productos') as HTMLDivElement;
-      const productosGrid = document.getElementById('productos-grid') as HTMLDivElement;
-      const paginacion = document.getElementById('paginacion') as HTMLDivElement;
-      const cartButton = document.getElementById('cart-button') as HTMLButtonElement;
-      const cartBadge = document.getElementById('cart-badge') as HTMLSpanElement;
-
-      const escaparHtml = (valor: string) => {
-        const elemento = document.createElement('span');
-        elemento.textContent = valor;
-        return elemento.innerHTML;
-      };
-
-      const crearUrlPagina = (buscar: string, page: number) => {
-        const params = new URLSearchParams();
-        if (buscar) params.set('buscar', buscar);
-        params.set('page', page.toString());
-        return `/?${params.toString()}`;
-      };
-
-      const crearCardProducto = (producto: Producto) => `
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow duration-300">
-          ${producto.imageUrl
-            ? `<img src="${escaparHtml(producto.imageUrl)}" alt="${escaparHtml(producto.nombre)}" class="w-full h-48 object-cover" />`
-            : `<div class="w-full h-48 bg-gray-100 flex items-center justify-center"><span class="text-4xl">💻</span></div>`
-          }
-
-          <div class="p-6">
-            <h2 class="text-xl font-bold text-gray-800 mb-2">${escaparHtml(producto.nombre)}</h2>
-            <p class="text-gray-600 text-sm mb-4">${escaparHtml(producto.descripcion)}</p>
-            <p class="text-3xl font-black text-emerald-500 mb-2">$${producto.precio}</p>
-            <p class="text-xs text-gray-400 font-medium tracking-wide uppercase">Stock: ${producto.stock} unidades</p>
-
-            <button
-              class="btn-add-cart w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex justify-center items-center gap-2"
-              data-producto="${encodeURIComponent(JSON.stringify(producto))}">
-              <span>Añadir al carrito</span>
-              <span>🛒</span>
-            </button>
-
-            <div class="mt-4 flex gap-4 border-t border-gray-100 pt-4">
-              <button class="text-sm text-blue-500 hover:text-blue-700 font-semibold flex items-center gap-1 btn-editar"
-                data-id="${producto.id}"
-                data-nombre="${escaparHtml(producto.nombre)}"
-                data-desc="${escaparHtml(producto.descripcion)}"
-                data-precio="${producto.precio}"
-                data-stock="${producto.stock}">
-                ✏️ Editar
-              </button>
-
-              <button class="text-sm text-red-500 hover:text-red-700 font-semibold flex items-center gap-1 btn-eliminar"
-                data-id="${producto.id}">
-                🗑️ Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-
-      const configurarEventosCrud = () => {
-        document.querySelectorAll('.btn-editar').forEach(boton => {
-          boton.addEventListener('click', async (e) => {
-            const t = e.currentTarget as HTMLButtonElement;
-            const id = t.getAttribute('data-id');
-            const nombre = t.getAttribute('data-nombre');
-            const precioActual = t.getAttribute('data-precio');
-
-            const nuevoPrecioStr = prompt(`Nuevo precio para ${nombre}:`, precioActual || '');
-            if (nuevoPrecioStr) {
-              const nuevoPrecio = parseFloat(nuevoPrecioStr);
-              await fetch(`${API_URL}/${id}`, {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${localStorage.getItem('kimstore_token')}`
-                },
-                body: JSON.stringify({
-                  nombre: t.getAttribute('data-nombre'),
-                  descripcion: t.getAttribute('data-desc'),
-                  precio: nuevoPrecio,
-                  stock: parseInt(t.getAttribute('data-stock') || '0')
-                })
-              });
-              window.location.reload();
-            }
-          });
-        });
-
-        document.querySelectorAll('.btn-add-cart').forEach(boton => {
-          boton.addEventListener('click', () => {
-            const t = boton as HTMLButtonElement;
-            const productoRaw = t.getAttribute('data-producto');
-
-            if (!productoRaw) return;
-
-            const producto = JSON.parse(decodeURIComponent(productoRaw));
-            agregarAlCarrito(producto);
-
-            Swal.fire({
-              toast: true,
-              position: 'bottom-end',
-              icon: 'success',
-              title: '¡Agregado al carrito!',
-              showConfirmButton: false,
-              timer: 1500,
-              background: '#333',
-              color: '#fff'
-            });
-          });
-        });
-
-        document.querySelectorAll('.btn-eliminar').forEach(boton => {
-          boton.addEventListener('click', async (e) => {
-            const t = e.currentTarget as HTMLButtonElement;
-            const id = t.getAttribute('data-id');
-            if (confirm('¿Eliminar producto?')) {
-              await fetch(`${API_URL}/${id}`, {
-                method: 'DELETE',
-                headers: {
-                  'Authorization': `Bearer ${localStorage.getItem('kimstore_token')}`
-                }
-              });
-              window.location.reload();
-            }
-          });
-        });
-      };
-
-      const cargarProductos = async () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const buscar = urlParams.get('buscar') || '';
-        const paginaActual = parseInt(urlParams.get('page') || '0');
-
-        buscarInput.value = buscar;
-        limpiarBusqueda.classList.toggle('hidden', !buscar);
-        limpiarBusqueda.classList.toggle('flex', Boolean(buscar));
-
-        const apiParams = new URLSearchParams();
-        if (buscar) apiParams.set('buscar', buscar);
-        apiParams.set('page', paginaActual.toString());
-        apiParams.set('size', '6');
-
-        try {
-          const respuesta = await fetch(`${API_URL}?${apiParams.toString()}`);
-
-          if (!respuesta.ok) {
-            throw new Error(`Error al consultar productos: ${respuesta.status}`);
-          }
-
-          const data = await respuesta.json();
-          const productos: Producto[] = data.content || [];
-          const totalPaginas = data.totalPages || 0;
-
-          productosGrid.innerHTML = productos.map(crearCardProducto).join('');
-          estadoProductos.classList.toggle('hidden', productos.length > 0);
-          estadoProductos.textContent = buscar
-            ? `No se encontraron productos para "${buscar}".`
-            : 'No hay productos registrados todavía.';
-
-          paginacion.innerHTML = `
-            ${paginaActual > 0
-              ? `<a href="${crearUrlPagina(buscar, paginaActual - 1)}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold px-4 py-2 rounded-lg transition-colors">⬅️ Anterior</a>`
-              : ''}
-            ${totalPaginas > 0
-              ? `<span class="px-4 py-2 text-gray-500 font-medium bg-white border border-gray-200 rounded-lg shadow-sm">Página ${paginaActual + 1} de ${totalPaginas}</span>`
-              : ''}
-            ${paginaActual < totalPaginas - 1
-              ? `<a href="${crearUrlPagina(buscar, paginaActual + 1)}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-4 py-2 rounded-lg transition-colors">Siguiente ➡️</a>`
-              : ''}
-          `;
-
-          configurarEventosCrud();
-        } catch {
-          productosGrid.innerHTML = '';
-          paginacion.innerHTML = '';
-          estadoProductos.className = 'rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-800 mb-6';
-          estadoProductos.innerHTML = `
-            <h2 class="font-bold text-lg mb-1">Backend no disponible</h2>
-            <p class="text-sm">Verifica que la API esté disponible en <strong>${API_URL}</strong> para cargar, guardar, editar y eliminar productos.</p>
-          `;
-        }
-      };
-
-      cart.subscribe((datosDelCarrito) => {
-        const totalArticulos = datosDelCarrito.reduce((suma, item) => suma + item.cantidad, 0);
-
-        if (totalArticulos > 0) {
-          cartBadge.textContent = totalArticulos.toString();
-          cartBadge.classList.remove('hidden');
-        } else {
-          cartBadge.classList.add('hidden');
-        }
-      });
-
-      cartButton.addEventListener('click', () => {
-        const carritoActual = cart.get();
-
-        if (carritoActual.length === 0) {
-          Swal.fire({
-            icon: 'info',
-            title: 'Carrito vacío',
-            text: 'Agrega una computadora para verla aquí.',
-            confirmButtonColor: '#2563eb'
-          });
-          return;
-        }
-
-        const total = carritoActual.reduce((suma, item) => suma + (item.precio * item.cantidad), 0);
-        const productosHtml = carritoActual.map(item => `
-          <div class="flex justify-between gap-4 border-b border-gray-100 py-3 text-left">
-            <div>
-              <p class="font-bold text-gray-800">${escaparHtml(item.nombre)}</p>
-              <p class="text-sm text-gray-500">Cantidad: ${item.cantidad}</p>
-            </div>
-            <div class="text-right">
-              <p class="font-bold text-emerald-600">$${(item.precio * item.cantidad).toFixed(2)}</p>
-              <button
-                type="button"
-                class="btn-remove-cart mt-2 text-xs font-bold text-red-500 hover:text-red-700"
-                data-id="${item.id}">
-                Quitar
-              </button>
-            </div>
-          </div>
-        `).join('');
-
-        Swal.fire({
-          title: 'Tu carrito',
-          html: `
-            <div class="max-h-96 overflow-y-auto">
-              ${productosHtml}
-              <div class="flex justify-between pt-4 text-lg">
-                <span class="font-bold">Total</span>
-                <span class="font-black text-emerald-600">$${total.toFixed(2)}</span>
-              </div>
-              <div class="flex justify-center gap-4 mt-6">
-                <button id="btn-cerrar-modal" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
-                  Cerrar
-                </button>
-                <button id="btn-comprar" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded font-bold">
-                  Finalizar Compra
-                </button>
-              </div>
-            </div>
-          `,
-          showConfirmButton: false,
-          width: 520,
-          didOpen: () => {
-            document.getElementById('btn-cerrar-modal')?.addEventListener('click', () => {
-              Swal.close();
-            });
-
-            document.getElementById('btn-comprar')?.addEventListener('click', async () => {
-              const carritoActual = cart.get();
-
-              if (carritoActual.length === 0) {
-                Swal.fire('Carrito vacío', 'Agrega algunos productos primero', 'warning');
-                return;
-              }
-
-              const itemsCompra = carritoActual.map(item => ({
-                id: item.id,
-                cantidad: item.cantidad
-              }));
-
-              try {
-                const token = localStorage.getItem('kimstore_token');
-                const response = await fetch(`${API_URL}/comprar`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                  },
-                  body: JSON.stringify(itemsCompra)
-                });
-
-                if (!response.ok) {
-                  const textoError = await response.text();
-                  let errorData: { error?: string } = {};
-
-                  try {
-                    errorData = textoError ? JSON.parse(textoError) : {};
-                  } catch {
-                    errorData = {};
-                  }
-
-                  throw new Error(errorData.error || `Error al procesar la compra (${response.status})`);
-                }
-
-                limpiarCarrito();
-
-                Swal.fire({
-                  icon: 'success',
-                  title: '¡Compra exitosa!',
-                  text: 'Gracias por tu preferencia en KimStore.',
-                }).then(() => {
-                  window.location.reload();
-                });
-              } catch (error) {
-                Swal.fire(
-                  'Error en la compra',
-                  error instanceof Error ? error.message : 'No se pudo procesar la compra',
-                  'error'
-                );
-              }
-            });
-
-            document.querySelectorAll('.btn-remove-cart').forEach(boton => {
-              boton.addEventListener('click', () => {
-                const id = Number((boton as HTMLButtonElement).getAttribute('data-id'));
-                eliminarDelCarrito(id);
-                Swal.close();
-                cartButton.click();
-              });
-            });
-          }
-        });
-      });
-
-      cargarProductos();
-    </script>
-  </body>
-</html>
+    <div class="absolute bottom-10 animate-bounce text-gray-400 hidden md:block">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+      </svg>
+    </div>
+  </main>
+</Layout>

@@ -45,18 +45,24 @@ public class SecurityConfig {
                 // Revisamos los JWT antes de cualquier autenticacion tradicional
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
 
-                // Configuramos qué rutas están abiertas y cuáles cerradas
                 .authorizeHttpRequests(auth -> auth
-                        // 🔓 CUALQUIERA puede ver los productos (GET)
+                        // El dashboard de metricas es exclusivo para administradores
+                        .requestMatchers(HttpMethod.GET, "/api/productos/dashboard/metrics").hasRole("ADMIN")
+
+                        // Cualquiera puede ver los productos, iniciar sesion y registrarse
                         .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
 
-                        // 🔓 CUALQUIERA puede intentar iniciar sesión (POST al login que crearemos pronto)
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        // hasRole busca automaticamente el prefijo "ROLE_"
+                        .requestMatchers(HttpMethod.POST, "/api/productos/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/productos/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/productos/**").hasRole("ADMIN")
 
-                        // 🔓 CUALQUIERA puede finalizar una compra desde el carrito
-                        .requestMatchers(HttpMethod.POST, "/api/productos/comprar").permitAll()
+                        // Rutas de pedidos: se requiere estar logueado con cualquier rol
+                        .requestMatchers("/api/pedidos/comprar").authenticated()
+                        .requestMatchers("/api/pedidos/mis-compras").authenticated()
 
-                        // 🔒 PARA TODO LO DEMÁS (Crear, Editar, Borrar), tienes que estar autenticado
+                        // Cualquier otra peticion requiere estar autenticado
                         .anyRequest().authenticated()
                 )
                 .build();

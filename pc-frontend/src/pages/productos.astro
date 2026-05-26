@@ -1,0 +1,457 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ProductForm from '../components/ProductForm.astro';
+---
+
+<Layout title="Panel de Inventario | KimStore 2.0">
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex-shrink-0 flex items-center gap-2">
+          <span class="text-2xl">💻</span>
+          <span class="font-black text-xl text-gray-900 tracking-tight">KimStore <span class="text-blue-600">2.0</span></span>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <a
+            href="/mis-compras"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+          >
+            📦 Mis Compras
+          </a>
+
+          <button
+            id="btn-logout"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
+          >
+            Cerrar Sesión
+            <svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div id="dashboard-admin" class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8 hidden">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex items-center gap-4">
+        <div class="p-4 rounded-xl bg-blue-50 text-blue-600 text-2xl font-bold">
+          📦
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Total Productos</p>
+          <p id="metric-total" class="text-3xl font-black text-gray-900 mt-1">0</p>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex items-center gap-4">
+        <div class="p-4 rounded-xl bg-green-50 text-green-600 text-2xl font-bold">
+          💰
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Valor Inventario</p>
+          <p id="metric-valor" class="text-3xl font-black text-gray-900 mt-1">$0.00</p>
+        </div>
+      </div>
+
+      <div id="widget-alerta" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex items-center gap-4 transition-colors">
+        <div id="icon-alerta" class="p-4 rounded-xl bg-gray-50 text-gray-600 text-2xl font-bold">
+          ⚠️
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Stock Crítico</p>
+          <p id="metric-stock" class="text-3xl font-black text-gray-900 mt-1">0</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-8 bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
+      <form class="flex flex-col sm:flex-row gap-4" action="/productos" method="GET">
+        <div class="relative flex-grow">
+          <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <span class="text-gray-400">🔍</span>
+          </div>
+          <input
+            id="buscar"
+            type="text"
+            name="buscar"
+            class="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors"
+            placeholder="Buscar computadora por nombre (ej. Asus, Laptop...)"
+          />
+        </div>
+        <button type="submit" class="inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-bold rounded-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm">
+          Buscar
+        </button>
+        <a id="limpiar-busqueda" href="/productos" class="hidden justify-center items-center px-6 py-3 border border-gray-200 text-base font-bold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition-colors shadow-sm">
+          Limpiar
+        </a>
+      </form>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div id="form-columna" class="lg:col-span-1 hidden">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 sticky top-24">
+          <h2 class="text-xl font-extrabold text-gray-900 mb-6 flex items-center gap-2">
+            Añadir Producto <span class="text-blue-600">➕</span>
+          </h2>
+          <ProductForm />
+        </div>
+      </div>
+
+      <div id="grid-columna" class="lg:col-span-4">
+        <div id="estado-productos" class="rounded-2xl border border-gray-200 bg-white p-6 text-gray-500">
+          Cargando productos...
+        </div>
+
+        <div id="productos-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+
+        <div id="paginacion" class="mt-8 flex justify-center items-center gap-4"></div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { agregarAlCarrito } from '../store/cartStore';
+  import type { Producto } from '../store/cartStore';
+  import Swal from 'sweetalert2';
+
+  interface Metricas {
+    totalProductos: number;
+    valorTotalInventario: number;
+    cantidadStockBajo: number;
+  }
+
+  const token = localStorage.getItem('kimstore_token');
+  const role = localStorage.getItem('kimstore_role');
+
+  if (!token) {
+    window.location.href = '/login';
+  }
+
+  const formColumna = document.getElementById('form-columna');
+  const gridColumna = document.getElementById('grid-columna');
+  const dashboardAdmin = document.getElementById('dashboard-admin');
+  const txtTotal = document.getElementById('metric-total');
+  const txtValor = document.getElementById('metric-valor');
+  const txtStock = document.getElementById('metric-stock');
+  const widgetAlerta = document.getElementById('widget-alerta');
+  const iconAlerta = document.getElementById('icon-alerta');
+
+  const mostrarAccionesAdmin = () => {
+    if (role !== 'ROLE_ADMIN') return;
+
+    const panelesAdmin = document.querySelectorAll('[data-admin-actions]');
+    panelesAdmin.forEach(panel => panel.classList.remove('hidden'));
+  };
+
+  const API_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+    ? 'http://localhost:8080/api/productos'
+    : 'https://kimstore-api-backend.onrender.com/api/productos';
+
+  const cargarMetricas = async () => {
+    try {
+      const response = await fetch(`${API_URL}/dashboard/metrics`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('No se pudieron cargar las métricas');
+
+      const data: Metricas = await response.json();
+
+      if (txtTotal) txtTotal.textContent = data.totalProductos.toString();
+      if (txtValor) {
+        txtValor.textContent = `$${data.valorTotalInventario.toLocaleString('es-MX', {
+          minimumFractionDigits: 2
+        })}`;
+      }
+      if (txtStock) txtStock.textContent = data.cantidadStockBajo.toString();
+
+      if (data.cantidadStockBajo > 0 && widgetAlerta && iconAlerta) {
+        widgetAlerta.classList.remove('border-gray-200', 'bg-white');
+        widgetAlerta.classList.add('border-red-200', 'bg-red-50');
+        iconAlerta.classList.remove('bg-gray-50', 'text-gray-600');
+        iconAlerta.classList.add('bg-red-100', 'text-red-600');
+      }
+    } catch (error) {
+      console.error('Error al solicitar el dashboard:', error);
+    }
+  };
+
+  if (role === 'ROLE_ADMIN') {
+    formColumna?.classList.remove('hidden');
+    gridColumna?.classList.remove('lg:col-span-4');
+    gridColumna?.classList.add('lg:col-span-3');
+    dashboardAdmin?.classList.remove('hidden');
+    cargarMetricas();
+  }
+
+  const buscarInput = document.getElementById('buscar') as HTMLInputElement;
+  const limpiarBusqueda = document.getElementById('limpiar-busqueda') as HTMLAnchorElement;
+  const estadoProductos = document.getElementById('estado-productos') as HTMLDivElement;
+  const productosGrid = document.getElementById('productos-grid') as HTMLDivElement;
+  const paginacion = document.getElementById('paginacion') as HTMLDivElement;
+
+  const escaparHtml = (valor: string | number | undefined) => {
+    const elemento = document.createElement('span');
+    elemento.textContent = String(valor ?? '');
+    return elemento.innerHTML;
+  };
+
+  const crearUrlPagina = (buscar: string, page: number) => {
+    const params = new URLSearchParams();
+    if (buscar) params.set('buscar', buscar);
+    params.set('page', page.toString());
+    return `/productos?${params.toString()}`;
+  };
+
+  const crearCardProducto = (producto: Producto) => `
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full group">
+      <div class="h-48 bg-gray-50 relative border-b border-gray-100 flex items-center justify-center overflow-hidden">
+        ${producto.imageUrl
+          ? `<img src="${escaparHtml(producto.imageUrl)}" alt="${escaparHtml(producto.nombre)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />`
+          : `<span class="text-6xl group-hover:scale-110 transition-transform duration-500">💻</span>`
+        }
+
+        <div class="absolute top-3 right-3">
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${producto.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+            ${producto.stock > 0 ? `${producto.stock} en stock` : 'Agotado'}
+          </span>
+        </div>
+      </div>
+
+      <div class="p-5 flex flex-col flex-grow">
+        <h3 class="text-xl font-bold text-gray-900 leading-tight mb-2 line-clamp-1" title="${escaparHtml(producto.nombre)}">
+          ${escaparHtml(producto.nombre)}
+        </h3>
+        <p class="text-sm text-gray-600 mb-4 flex-grow line-clamp-2">
+          ${escaparHtml(producto.descripcion)}
+        </p>
+
+        <div class="text-3xl font-black text-gray-900 mb-5">
+          $${producto.precio.toLocaleString()}
+        </div>
+
+        <div class="space-y-3 mt-auto">
+          <button
+            class="btn-add-cart w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3 px-4 rounded-xl transition-colors flex justify-center items-center gap-2 shadow-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
+            data-producto="${encodeURIComponent(JSON.stringify(producto))}"
+            ${producto.stock === 0 ? 'disabled' : ''}
+          >
+            <span>${producto.stock > 0 ? 'Añadir al carrito' : 'Sin inventario'}</span>
+            <span class="text-lg">🛒</span>
+          </button>
+
+          <div data-admin-actions class="flex justify-between items-center border-t border-gray-100 pt-3 hidden">
+            <button
+              class="btn-editar flex items-center gap-1 text-sm font-semibold text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded-md hover:bg-blue-50"
+              data-id="${producto.id}"
+              data-nombre="${escaparHtml(producto.nombre)}"
+              data-desc="${escaparHtml(producto.descripcion)}"
+              data-precio="${producto.precio}"
+              data-stock="${producto.stock}"
+              data-image-url="${escaparHtml(producto.imageUrl)}"
+            >
+              ✏️ Editar
+            </button>
+            <button
+              class="btn-eliminar flex items-center gap-1 text-sm font-semibold text-gray-500 hover:text-red-600 transition-colors px-2 py-1 rounded-md hover:bg-red-50"
+              data-id="${producto.id}"
+            >
+              🗑️ Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const configurarEventosCrud = () => {
+    document.querySelectorAll('.btn-add-cart').forEach(boton => {
+      boton.addEventListener('click', () => {
+        const productoRaw = (boton as HTMLButtonElement).getAttribute('data-producto');
+        if (!productoRaw) return;
+
+        const producto = JSON.parse(decodeURIComponent(productoRaw)) as Producto;
+        agregarAlCarrito(producto);
+
+        Swal.fire({
+          toast: true,
+          position: 'bottom-end',
+          icon: 'success',
+          title: 'Agregado al carrito',
+          showConfirmButton: false,
+          timer: 1500,
+          background: '#1F2937',
+          color: '#fff'
+        });
+      });
+    });
+
+    document.querySelectorAll('.btn-editar').forEach(boton => {
+      boton.addEventListener('click', async (e) => {
+        const t = e.currentTarget as HTMLButtonElement;
+        const id = t.getAttribute('data-id');
+        const nombre = t.getAttribute('data-nombre');
+        const precioActual = t.getAttribute('data-precio');
+        const nuevoPrecioStr = prompt(`Nuevo precio para ${nombre}:`, precioActual || '');
+
+        if (!nuevoPrecioStr) return;
+
+        const token = localStorage.getItem('kimstore_token');
+        if (!token) {
+          Swal.fire('Error', 'Debes iniciar sesión para editar productos', 'error');
+          window.location.href = '/login';
+          return;
+        }
+
+        const response = await fetch(`${API_URL}/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            nombre: t.getAttribute('data-nombre'),
+            descripcion: t.getAttribute('data-desc'),
+            precio: parseFloat(nuevoPrecioStr),
+            stock: parseInt(t.getAttribute('data-stock') || '0'),
+            imageUrl: t.getAttribute('data-image-url') || undefined
+          })
+        });
+
+        if (!response.ok) {
+          Swal.fire('Error', 'No se pudo actualizar el producto', 'error');
+          return;
+        }
+
+        window.location.reload();
+      });
+    });
+
+    document.querySelectorAll('.btn-eliminar').forEach(boton => {
+      boton.addEventListener('click', async (e) => {
+        const t = e.currentTarget as HTMLButtonElement;
+        const id = t.getAttribute('data-id');
+        const token = localStorage.getItem('kimstore_token');
+
+        if (!token) {
+          Swal.fire('Error', 'No tienes permisos', 'error');
+          window.location.href = '/login';
+          return;
+        }
+
+        const confirmacion = await Swal.fire({
+          title: '¿Estás seguro?',
+          text: 'Esta acción no se puede deshacer',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#EF4444',
+          cancelButtonColor: '#6B7280',
+          confirmButtonText: 'Sí, eliminar',
+          cancelButtonText: 'Cancelar'
+        });
+
+        if (!confirmacion.isConfirmed || !id) return;
+
+        const response = await fetch(`${API_URL}/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          Swal.fire('Error', 'No se pudo eliminar el producto', 'error');
+          return;
+        }
+
+        Swal.fire('Eliminado', 'El producto ha sido borrado.', 'success').then(() => {
+          window.location.reload();
+        });
+      });
+    });
+  };
+
+  const cargarProductos = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const buscar = urlParams.get('buscar') || '';
+    const paginaActual = parseInt(urlParams.get('page') || '0');
+
+    buscarInput.value = buscar;
+    limpiarBusqueda.classList.toggle('hidden', !buscar);
+    limpiarBusqueda.classList.toggle('inline-flex', Boolean(buscar));
+
+    const apiParams = new URLSearchParams();
+    if (buscar) apiParams.set('buscar', buscar);
+    apiParams.set('page', paginaActual.toString());
+    apiParams.set('size', '6');
+
+    try {
+      const respuesta = await fetch(`${API_URL}?${apiParams.toString()}`);
+
+      if (!respuesta.ok) {
+        throw new Error(`Error al consultar productos: ${respuesta.status}`);
+      }
+
+      const data = await respuesta.json();
+      const productos: Producto[] = data.content || [];
+      const totalPaginas = data.totalPages || 0;
+
+      productosGrid.innerHTML = productos.map(crearCardProducto).join('');
+      estadoProductos.classList.toggle('hidden', productos.length > 0);
+      estadoProductos.textContent = buscar
+        ? `No se encontraron productos para "${buscar}".`
+        : 'No hay productos registrados todavía.';
+
+      paginacion.innerHTML = `
+        ${paginaActual > 0
+          ? `<a href="${crearUrlPagina(buscar, paginaActual - 1)}" class="bg-white hover:bg-gray-50 text-gray-700 font-bold px-4 py-2 rounded-xl transition-colors border border-gray-200 shadow-sm">Anterior</a>`
+          : ''}
+        ${totalPaginas > 0
+          ? `<span class="px-4 py-2 text-gray-500 font-medium bg-white border border-gray-200 rounded-xl shadow-sm">Página ${paginaActual + 1} de ${totalPaginas}</span>`
+          : ''}
+        ${paginaActual < totalPaginas - 1
+          ? `<a href="${crearUrlPagina(buscar, paginaActual + 1)}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl transition-colors shadow-sm">Siguiente</a>`
+          : ''}
+      `;
+
+      mostrarAccionesAdmin();
+      configurarEventosCrud();
+    } catch {
+      productosGrid.innerHTML = '';
+      paginacion.innerHTML = '';
+      estadoProductos.className = 'rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-800 mb-6';
+      estadoProductos.innerHTML = `
+        <h2 class="font-bold text-lg mb-1">Backend no disponible</h2>
+        <p class="text-sm">Verifica que la API esté disponible en <strong>${API_URL}</strong> para cargar, guardar, editar y eliminar productos.</p>
+      `;
+    }
+  };
+
+  document.getElementById('btn-logout')?.addEventListener('click', () => {
+    Swal.fire({
+      title: '¿Cerrar sesión?',
+      text: 'Tendrás que volver a ingresar tus credenciales.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3B82F6',
+      cancelButtonColor: '#6B7280',
+      confirmButtonText: 'Sí, salir',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.removeItem('kimstore_token');
+        localStorage.removeItem('kimstore_role');
+        window.location.href = '/login';
+      }
+    });
+  });
+
+  cargarProductos();
+</script>

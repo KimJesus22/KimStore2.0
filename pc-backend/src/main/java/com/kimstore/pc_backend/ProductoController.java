@@ -1,5 +1,6 @@
 package com.kimstore.pc_backend;
 
+import com.kimstore.pc_backend.dto.DashboardMetricsDTO;
 import com.kimstore.pc_backend.dto.ItemCompraDTO;
 import com.kimstore.pc_backend.dto.ProductoDTO;
 import com.kimstore.pc_backend.service.CloudinaryService;
@@ -114,5 +115,23 @@ public class ProductoController {
         }
 
         return ResponseEntity.ok(Map.of("mensaje", "Compra procesada con exito"));
+    }
+
+    // --- NUEVO ENDPOINT PARA EL DASHBOARD DE ADMINISTRADOR ---
+    @GetMapping("/dashboard/metrics")
+    public ResponseEntity<DashboardMetricsDTO> getDashboardMetrics() {
+        List<Producto> productos = productoRepository.findAll();
+
+        long totalProductos = productos.size();
+
+        double valorTotal = productos.stream()
+                .mapToDouble(p -> p.getPrecio() * p.getStock())
+                .sum();
+
+        long stockBajo = productos.stream()
+                .filter(p -> p.getStock() < 3)
+                .count();
+
+        return ResponseEntity.ok(new DashboardMetricsDTO(totalProductos, valorTotal, stockBajo));
     }
 }
