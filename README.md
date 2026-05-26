@@ -49,7 +49,8 @@ También incorpora un flujo inicial de e-commerce: carrito persistente en el nav
 | 🍬 **SweetAlert2** | Alertas visuales para respuestas del formulario |
 | 🖼️ **FormData + Blob** | Envío de DTO JSON e imagen opcional en una sola petición |
 | 🔑 **LocalStorage** | Almacenamiento del token JWT del administrador |
-| 🚪 **Login Astro** | Pantalla `/login` para iniciar sesión como administrador |
+| 🚪 **Login Astro** | Pantalla `/login` para iniciar sesión y guardar token/rol |
+| 📝 **Register Astro** | Pantalla `/register` para crear usuarios |
 | 🧠 **Nano Stores** | Estado global ligero para el carrito |
 | 💾 **@nanostores/persistent** | Persistencia del carrito en `localStorage` |
 
@@ -119,7 +120,7 @@ El backend usa `@Valid` en el controller y restricciones como `@NotBlank`, `@Dec
 
 #### **Seguridad - Login, JWT y roles**
 
-El backend incorpora Spring Security con una configuración stateless basada en JWT. Las rutas públicas permiten consultar productos y acceder al login, mientras que las operaciones sensibles del CRUD requieren autenticación.
+El backend incorpora Spring Security con una configuración stateless basada en JWT. Las rutas públicas permiten consultar productos, registrarse, iniciar sesión y procesar una compra, mientras que las operaciones sensibles del CRUD requieren autenticación y rol de administrador.
 
 El flujo de seguridad está compuesto por:
 
@@ -129,7 +130,9 @@ El flujo de seguridad está compuesto por:
 - `SecurityConfig`: reglas de autorización, CORS, sesión stateless y registro del filtro JWT.
 - `JwtService`: generación y validación de tokens.
 - `JwtAuthenticationFilter`: lectura del header `Authorization: Bearer <token>`.
-- `AuthController`: endpoint de login en `/api/auth/login`.
+- `AuthController`: endpoints de login en `/api/auth/login` y registro en `/api/auth/register`.
+- `AuthResponse`: respuesta de autenticación con `token` y `role`.
+- `RegisterRequest`: DTO para crear usuarios desde el frontend.
 
 Actualmente, el backend inicializa un administrador de desarrollo:
 
@@ -154,6 +157,22 @@ El frontend construido con Astro consume la API del backend mediante `fetch`, ut
 
 Como el frontend se ejecuta en Astro con salida estática, la carga del catálogo se realiza desde el navegador. La página lee `window.location.search` con `URLSearchParams` para detectar parámetros como `buscar` y `page`, y después consulta al backend con `fetch`.
 
+La navegación actual separa la experiencia pública y el panel de productos:
+
+- `/`: landing page de bienvenida.
+- `/login`: inicio de sesión.
+- `/register`: creación de cuenta.
+- `/productos`: catálogo, carrito y panel de inventario.
+
+El frontend guarda dos llaves importantes en `localStorage`:
+
+```text
+kimstore_token = JWT devuelto por el backend
+kimstore_role = ROLE_ADMIN o ROLE_USER
+```
+
+Con `kimstore_role`, la interfaz muestra u oculta acciones administrativas. Los botones **Editar**, **Eliminar** y el formulario de creación aparecen únicamente cuando el rol es `ROLE_ADMIN`. Aun así, la seguridad real se mantiene en el backend con Spring Security.
+
 ### Endpoints principales
 
 | Método | Endpoint | Descripción |
@@ -165,6 +184,7 @@ Como el frontend se ejecuta en Astro con salida estática, la carga del catálog
 | `PUT` | `/api/productos/{id}` | Actualiza datos básicos usando `application/json` desde la edición rápida |
 | `DELETE` | `/api/productos/{id}` | Elimina un producto por ID |
 | `POST` | `/api/auth/login` | Valida credenciales y devuelve un token JWT |
+| `POST` | `/api/auth/register` | Crea un usuario nuevo con contraseña encriptada |
 | `POST` | `/api/productos/comprar` | Procesa el carrito, valida stock y descuenta inventario |
 
 ### Endpoints públicos y protegidos
@@ -173,9 +193,10 @@ Como el frontend se ejecuta en Astro con salida estática, la carga del catálog
 | --- | --- |
 | `GET /api/productos/**` | Público |
 | `POST /api/auth/login` | Público |
-| `POST /api/productos` | Requiere `Authorization: Bearer <token>` |
-| `PUT /api/productos/{id}` | Requiere `Authorization: Bearer <token>` |
-| `DELETE /api/productos/{id}` | Requiere `Authorization: Bearer <token>` |
+| `POST /api/auth/register` | Público |
+| `POST /api/productos` | Requiere `Authorization: Bearer <token>` y `ROLE_ADMIN` |
+| `PUT /api/productos/{id}` | Requiere `Authorization: Bearer <token>` y `ROLE_ADMIN` |
+| `DELETE /api/productos/{id}` | Requiere `Authorization: Bearer <token>` y `ROLE_ADMIN` |
 | `POST /api/productos/comprar` | Público para el flujo de compra actual |
 
 Ejemplo de login:
@@ -194,7 +215,8 @@ Respuesta:
 
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiJ9..."
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "role": "ROLE_ADMIN"
 }
 ```
 
@@ -292,12 +314,24 @@ KimStore/
 │       │   │   └── com/
 │       │   │       └── kimstore/
 │       │   │           └── pc_backend/
+│       │   │               ├── AuthController.java
 │       │   │               ├── PcBackendApplication.java
 │       │   │               ├── Producto.java
 │       │   │               ├── ProductoRepository.java
 │       │   │               ├── ProductoController.java
+│       │   │               ├── Usuario.java
+│       │   │               ├── UsuarioRepository.java
+│       │   │               ├── config/
+│       │   │               │   ├── ApplicationConfig.java
+│       │   │               │   ├── JwtAuthenticationFilter.java
+│       │   │               │   ├── JwtService.java
+│       │   │               │   └── SecurityConfig.java
 │       │   │               ├── dto/
-│       │   │               │   └── ProductoDTO.java
+│       │   │               │   ├── AuthResponse.java
+│       │   │               │   ├── ItemCompraDTO.java
+│       │   │               │   ├── LoginRequest.java
+│       │   │               │   ├── ProductoDTO.java
+│       │   │               │   └── RegisterRequest.java
 │       │   │               └── service/
 │       │   │                   ├── CloudinaryService.java
 │       │   │                   └── ProductoService.java
@@ -332,7 +366,12 @@ KimStore/
         ├── layouts/
         │   └── Layout.astro
         ├── pages/
-        │   └── index.astro
+        │   ├── index.astro
+        │   ├── login.astro
+        │   ├── productos.astro
+        │   └── register.astro
+        ├── store/
+        │   └── cartStore.ts
         ├── styles/
         │   └── global.css
         └── types/
@@ -362,11 +401,15 @@ pc-backend/
 
 pc-frontend/
 └── src/
+    ├── layouts/
+    │   └── Layout.astro
     ├── pages/
     │   ├── index.astro
+    │   ├── productos.astro
+    │   ├── register.astro
     │   └── login.astro
     └── store/
-        └── cartStore.js
+        └── cartStore.ts
 ```
 
 ---
@@ -654,18 +697,21 @@ BCrypt valida la contraseña encriptada
   ↓
 JwtService genera token
   ↓
-AuthResponse(token)
+AuthResponse(token, role)
   ↓
 localStorage.kimstore_token
+localStorage.kimstore_role
+  ↓
+La UI muestra acciones admin solo si role = ROLE_ADMIN
   ↓
 Authorization: Bearer <token> en POST / PUT / DELETE
   ↓
 JwtAuthenticationFilter valida el token
   ↓
-Spring Security permite la operación protegida
+Spring Security valida token y rol
 ```
 
-En el frontend, `ProductForm.astro` envía el token al crear productos. La vista principal `index.astro` también adjunta el token al editar y eliminar productos.
+En el frontend, `ProductForm.astro` envía el token al crear productos. La vista principal `/productos` también adjunta el token al editar y eliminar productos. Además, la interfaz oculta los controles administrativos con `hidden` y los revela únicamente para `ROLE_ADMIN`, mientras el backend mantiene la autorización real con `hasRole("ADMIN")`.
 
 ### Flujo de carrito y compra
 
@@ -674,7 +720,7 @@ Usuario
   ↓
 Añadir al carrito desde una tarjeta
   ↓
-cartStore.js con persistentAtom
+cartStore.ts con persistentAtom tipado
   ↓
 localStorage.kimstore_cart
   ↓
@@ -735,7 +781,7 @@ Este flujo evita que el frontend trabaje directamente con la entidad JPA, reduci
 Además, el backend acepta una actualización rápida con JSON:
 
 ```text
-index.astro
+productos.astro
   ↓
 fetch(PUT /api/productos/{id})
 Content-Type: application/json
@@ -753,7 +799,7 @@ Esto permite editar datos básicos sin subir imagen, mientras que el flujo `mult
 ```text
 URL del navegador
   ↓
-/?buscar=hp&page=0
+/productos?buscar=hp&page=0
   ↓
 JavaScript cliente con URLSearchParams
   ↓
@@ -903,7 +949,7 @@ El catálogo permite buscar productos por nombre y navegar resultados en página
 
 ### Frontend
 
-- `index.astro` renderiza la estructura base.
+- `productos.astro` renderiza la estructura base del catálogo e inventario.
 - El catálogo se carga en cliente con `fetch`.
 - `URLSearchParams(window.location.search)` lee `buscar` y `page`.
 - La respuesta del backend se lee desde `data.content`.
@@ -913,10 +959,10 @@ El catálogo permite buscar productos por nombre y navegar resultados en página
 Ejemplos de navegación en frontend:
 
 ```text
-http://localhost:4321/?page=0
-http://localhost:4321/?page=1
-http://localhost:4321/?buscar=hp
-http://localhost:4321/?buscar=laptop&page=0
+http://localhost:4321/productos?page=0
+http://localhost:4321/productos?page=1
+http://localhost:4321/productos?buscar=hp
+http://localhost:4321/productos?buscar=laptop&page=0
 ```
 
 ---
@@ -927,12 +973,12 @@ El frontend incluye un carrito persistente para simular el flujo inicial de una 
 
 ### Frontend
 
-- `src/store/cartStore.js` crea un store persistente con `persistentAtom`.
+- `src/store/cartStore.ts` crea un store persistente y tipado con `persistentAtom`.
 - El carrito se guarda en el navegador bajo la llave `kimstore_cart`.
 - `agregarAlCarrito(producto)` agrega productos o incrementa cantidad si ya existen.
 - `eliminarDelCarrito(productoId)` quita un producto solo del carrito.
 - `limpiarCarrito()` vacía el carrito después de una compra exitosa.
-- `index.astro` muestra un carrito flotante con contador reactivo.
+- `Layout.astro` muestra un carrito flotante con contador reactivo.
 - El modal del carrito permite revisar productos, quitar artículos y finalizar compra.
 
 ### Backend
@@ -967,7 +1013,7 @@ Payload enviado al backend:
 ]
 ```
 
-> Nota técnica: el store actual está en `cartStore.js`. Como el proyecto usa TypeScript, una mejora natural es migrarlo a `cartStore.ts` y tipar explícitamente `ProductoCarrito` para mantener consistencia con el resto del frontend.
+> Nota técnica: el store del carrito ya fue migrado a `cartStore.ts`, con interfaces `Producto` y `CartItem` para mantener consistencia con TypeScript.
 
 ---
 
@@ -997,12 +1043,17 @@ KimStore 2.0 ya cuenta con:
 - ✅ Variables de entorno para separar base de datos local y producción.
 - ✅ Entidad `Usuario` y `UsuarioRepository` para administradores.
 - ✅ Login en `/login` desde Astro.
+- ✅ Registro en `/register` conectado a `POST /api/auth/register`.
 - ✅ Endpoint `POST /api/auth/login` para generar JWT.
+- ✅ `AuthResponse` devuelve `token` y `role`.
 - ✅ `JwtService` y `JwtAuthenticationFilter` para validar tokens.
-- ✅ `SecurityConfig` con rutas públicas/protegidas, CORS y sesión stateless.
+- ✅ `SecurityConfig` con rutas públicas, rutas protegidas por rol, CORS y sesión stateless.
 - ✅ Usuario administrador inicial `kim` con contraseña `123456` para desarrollo.
 - ✅ Operaciones protegidas con header `Authorization: Bearer <token>`.
+- ✅ Control visual por rol con `kimstore_role` en `localStorage`.
+- ✅ Acciones de administrador ocultas para usuarios no administradores.
 - ✅ Store de carrito persistente con Nano Stores.
+- ✅ Carrito migrado a `cartStore.ts` con interfaces TypeScript.
 - ✅ Botón **Añadir al carrito** en tarjetas del catálogo.
 - ✅ Carrito flotante con contador reactivo.
 - ✅ Modal de carrito con productos, cantidades, subtotales y total general.
@@ -1021,10 +1072,10 @@ KimStore 2.0 ya cuenta con:
 - 🧹 Eliminar imágenes antiguas de Cloudinary cuando se reemplacen o borren productos.
 - 🔐 Reemplazar el administrador de desarrollo por un flujo seguro de registro/gestión de usuarios.
 - 🔐 Mover `jwt.secret` a variable de entorno (`JWT_SECRET`) antes de un despliegue público serio.
-- 🚪 Mostrar/ocultar acciones del CRUD según exista sesión activa en el frontend.
+- 🚪 Ampliar el panel de administración con vistas separadas para usuarios, productos y pedidos.
 - 📦 Separar lógica frontend en archivos TypeScript dedicados.
-- 🔷 Migrar `src/store/cartStore.js` a `cartStore.ts` con tipos explícitos para el carrito.
-- 🎨 Mejorar visualmente `/login` con Tailwind y añadir flujo de registro/creación de usuarios.
+- 🔷 Crear un cliente API compartido para centralizar `API_URL`, headers y manejo de errores.
+- 🎨 Mejorar visualmente `/productos` con filtros, estados vacíos y experiencia de usuario más cercana a e-commerce.
 - 🧾 Crear una página dedicada `/carrito` o checkout completo en lugar de depender solo de SweetAlert.
 - 🧮 Permitir aumentar/disminuir cantidades desde el modal del carrito.
 - 🧪 Agregar pruebas unitarias para service y controller.
