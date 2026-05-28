@@ -34,6 +34,8 @@ También incorpora un flujo inicial de e-commerce: carrito persistente en el nav
 | 🔒 **BCrypt** | Encriptación segura de contraseñas de administradores |
 | 🌍 **CORS configurado** | Permite comunicación entre Astro local/Vercel y Spring Boot |
 | 🛒 **Endpoint de compra** | Procesa carritos, descuenta stock y registra pedidos de forma transaccional |
+| 📧 **Spring Mail** | Envío de recibos de compra en HTML por correo electrónico |
+| ⭐ **Reseñas** | Comentarios y calificaciones por producto |
 
 ### 🎨 Frontend - `pc-frontend`
 
@@ -50,7 +52,8 @@ También incorpora un flujo inicial de e-commerce: carrito persistente en el nav
 | 🖼️ **FormData + Blob** | Envío de DTO JSON e imagen opcional en una sola petición |
 | 🔑 **LocalStorage** | Almacenamiento del token JWT del administrador |
 | 🚪 **Login Astro** | Pantalla `/login` para iniciar sesión y guardar token/rol |
-| 📝 **Register Astro** | Pantalla `/register` para crear usuarios |
+| 📝 **Register Astro** | Pantalla `/register` para crear usuarios con correo electrónico |
+| 👤 **Perfil Astro** | Pantalla `/perfil` para consultar datos y subir avatar |
 | 🧠 **Nano Stores** | Estado global ligero para el carrito |
 | 💾 **@nanostores/persistent** | Persistencia del carrito en `localStorage` |
 
@@ -131,8 +134,8 @@ El flujo de seguridad está compuesto por:
 - `JwtService`: generación y validación de tokens.
 - `JwtAuthenticationFilter`: lectura del header `Authorization: Bearer <token>`.
 - `AuthController`: endpoints de login en `/api/auth/login` y registro en `/api/auth/register`.
-- `AuthResponse`: respuesta de autenticación con `token` y `role`.
-- `RegisterRequest`: DTO para crear usuarios desde el frontend.
+- `AuthResponse`: respuesta de autenticación con `token`, `role` y `avatarUrl`.
+- `RegisterRequest`: DTO para crear usuarios desde el frontend usando correo electrónico.
 
 Actualmente, el backend inicializa un administrador de desarrollo:
 
@@ -164,12 +167,14 @@ La navegación actual separa la experiencia pública y el panel de productos:
 - `/register`: creación de cuenta.
 - `/productos`: catálogo, carrito y panel de inventario.
 - `/mis-compras`: historial de pedidos del usuario autenticado.
+- `/perfil`: datos de cuenta y actualización de avatar.
 
 El frontend guarda dos llaves importantes en `localStorage`:
 
 ```text
 kimstore_token = JWT devuelto por el backend
 kimstore_role = ROLE_ADMIN o ROLE_USER
+kimstore_avatar = URL del avatar del usuario, si existe
 ```
 
 Con `kimstore_role`, la interfaz muestra u oculta acciones administrativas. Los botones **Editar**, **Eliminar** y el formulario de creación aparecen únicamente cuando el rol es `ROLE_ADMIN`. Aun así, la seguridad real se mantiene en el backend con Spring Security.
@@ -180,6 +185,7 @@ Con `kimstore_role`, la interfaz muestra u oculta acciones administrativas. Los 
 | --- | --- | --- |
 | `GET` | `/api/productos` | Lista productos paginados |
 | `GET` | `/api/productos?buscar=hp&page=0&size=6` | Busca por nombre y pagina resultados |
+| `GET` | `/api/productos?buscar=ssd&min=1000&max=3000&soloDisponibles=true` | Aplica filtros avanzados por texto, precio y stock |
 | `POST` | `/api/productos` | Crea un producto usando `multipart/form-data` con `ProductoDTO` e imagen opcional |
 | `PUT` | `/api/productos/{id}` | Actualiza un producto usando `multipart/form-data` con `ProductoDTO` e imagen opcional |
 | `PUT` | `/api/productos/{id}` | Actualiza datos básicos usando `application/json` desde la edición rápida |
@@ -189,6 +195,10 @@ Con `kimstore_role`, la interfaz muestra u oculta acciones administrativas. Los 
 | `POST` | `/api/auth/register` | Crea un usuario nuevo con contraseña encriptada |
 | `POST` | `/api/pedidos/comprar` | Procesa el carrito autenticado, registra el pedido y descuenta inventario |
 | `GET` | `/api/pedidos/mis-compras` | Devuelve el historial de compras del usuario autenticado |
+| `GET` | `/api/usuarios/perfil` | Devuelve datos del usuario autenticado |
+| `POST` | `/api/usuarios/avatar` | Actualiza la foto de perfil con Cloudinary |
+| `GET` | `/api/resenas/producto/{productoId}` | Lista reseñas públicas de un producto |
+| `POST` | `/api/resenas` | Publica una reseña usando JWT |
 
 ### Endpoints públicos y protegidos
 
@@ -203,6 +213,10 @@ Con `kimstore_role`, la interfaz muestra u oculta acciones administrativas. Los 
 | `DELETE /api/productos/{id}` | Requiere `Authorization: Bearer <token>` y `ROLE_ADMIN` |
 | `POST /api/pedidos/comprar` | Requiere `Authorization: Bearer <token>` |
 | `GET /api/pedidos/mis-compras` | Requiere `Authorization: Bearer <token>` |
+| `GET /api/usuarios/perfil` | Requiere `Authorization: Bearer <token>` |
+| `POST /api/usuarios/avatar` | Requiere `Authorization: Bearer <token>` |
+| `GET /api/resenas/producto/**` | Público |
+| `POST /api/resenas` | Requiere `Authorization: Bearer <token>` |
 
 > Nota: el endpoint anterior `POST /api/productos/comprar` fue reemplazado por `POST /api/pedidos/comprar` para poder asociar cada compra con el usuario autenticado y guardar historial.
 
@@ -223,7 +237,8 @@ Respuesta:
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiJ9...",
-  "role": "ROLE_ADMIN"
+  "role": "ROLE_ADMIN",
+  "avatarUrl": "https://res.cloudinary.com/..."
 }
 ```
 
@@ -721,10 +736,11 @@ BCrypt valida la contraseña encriptada
   ↓
 JwtService genera token
   ↓
-AuthResponse(token, role)
+AuthResponse(token, role, avatarUrl)
   ↓
 localStorage.kimstore_token
 localStorage.kimstore_role
+localStorage.kimstore_avatar
   ↓
 La UI muestra acciones admin solo si role = ROLE_ADMIN
   ↓
@@ -736,6 +752,8 @@ Spring Security valida token y rol
 ```
 
 En el frontend, `ProductForm.astro` envía el token al crear productos. La vista principal `/productos` también adjunta el token al editar y eliminar productos. Además, la interfaz oculta los controles administrativos con `hidden` y los revela únicamente para `ROLE_ADMIN`, mientras el backend mantiene la autorización real con `hasRole("ADMIN")`.
+
+El registro usa correo electrónico como identidad principal. Ese correo se guarda en `Usuario.username`, por lo que también se utiliza como destino del recibo de compra enviado por email.
 
 ### Flujo de carrito y compra
 
@@ -840,6 +858,58 @@ ProductoService.actualizar()
 
 Esto permite editar datos básicos sin subir imagen, mientras que el flujo `multipart/form-data` queda disponible para actualizaciones con archivo.
 
+### Flujo de perfil y avatar
+
+```text
+Usuario autenticado
+  ↓
+/perfil en Astro
+  ↓ GET /api/usuarios/perfil
+UsuarioController
+  ↓
+Usuario(username, rol, avatarUrl)
+  ↓
+Formulario de avatar con FormData
+  ↓ POST /api/usuarios/avatar
+CloudinaryService
+  ↓
+URL pública guardada en Usuario.avatarUrl
+  ↓
+localStorage.kimstore_avatar
+  ↓
+Avatar visible en la barra superior
+```
+
+El avatar no se guarda como archivo dentro de la base de datos. La base conserva solo la URL pública generada por Cloudinary.
+
+### Flujo de reseñas
+
+```text
+Usuario abre Opiniones y Reseñas
+  ↓
+GET /api/resenas/producto/{productoId}
+  ↓
+ResenaController
+  ↓
+ResenaRepository.findByProductoIdOrderByFechaDesc(...)
+  ↓
+ResenaResponseDTO
+  ↓
+Modal con reseñas reales o datos mock si aún no existen
+
+Usuario autenticado publica reseña
+  ↓
+POST /api/resenas
+  ↓
+ResenaRequestDTO(productoId, calificacion, comentario)
+  ↓
+Validación de calificación entre 1 y 5
+  ↓
+Resena asociada a Producto y Usuario
+```
+
+Las reseñas reales se guardan en la tabla `resenas`. Si un producto aún no tiene reseñas, el frontend muestra tarjetas mock de ejemplo para que el diseño no se vea vacío durante demos.
+
 ### Flujo de búsqueda y paginación
 
 ```text
@@ -860,6 +930,18 @@ ProductoRepository.findByNombreContainingIgnoreCase(..., Pageable)
 Respuesta Page<Producto>
   ↓
 Render dinámico de tarjetas y controles Anterior/Siguiente
+```
+
+Además de la búsqueda paginada, el catálogo incluye filtros avanzados:
+
+```text
+/productos?buscar=ssd&min=1000&max=3000&soloDisponibles=true
+  ↓
+GET /api/productos?buscar=ssd&min=1000&max=3000&soloDisponibles=true
+  ↓
+ProductoRepository.buscarConFiltros(...)
+  ↓
+Lista filtrada por nombre, precio mínimo, precio máximo y stock disponible
 ```
 
 ### Flujo de imagen de producto
@@ -1038,6 +1120,8 @@ El frontend incluye un carrito persistente para simular el flujo inicial de una 
 - `ItemPedido` guarda el detalle congelado de cada producto comprado.
 - `PedidoRepository` permite consultar pedidos por usuario ordenados del más reciente al más antiguo.
 - `GET /api/pedidos/mis-compras` devuelve el historial usando `PedidoResponseDTO` e `ItemPedidoDTO`.
+- `EmailService` genera un recibo HTML y lo envía con `JavaMailSender`.
+- El recibo se manda al correo usado como `username` del usuario.
 
 Ejemplo del carrito guardado en el navegador:
 
@@ -1084,6 +1168,8 @@ Respuesta del historial de compras:
 
 > Nota técnica: el store del carrito ya fue migrado a `cartStore.ts`, con interfaces `Producto` y `CartItem` para mantener consistencia con TypeScript.
 
+> Nota operativa: si cambias clases Java, reinicia Spring Boot. Si el backend sigue corriendo con un build viejo, puedes ver errores como `403 Forbidden` aunque el código fuente ya esté corregido.
+
 ---
 
 ## 🧠 Estado Actual del Proyecto
@@ -1094,12 +1180,14 @@ KimStore 2.0 ya cuenta con:
 - ✅ API REST para CRUD de productos.
 - ✅ Entidad `Producto` conectada a MariaDB mediante JPA.
 - ✅ `ProductoRepository` usando `JpaRepository`.
+- ✅ `ProductoRepository.buscarConFiltros(...)` para búsqueda avanzada por nombre, precio y stock.
 - ✅ `ProductoService` como capa de lógica de negocio.
 - ✅ `ProductoDTO` para entrada limpia de datos.
 - ✅ Campo `imageUrl` en productos.
 - ✅ Servicio `CloudinaryService` para subir imágenes.
 - ✅ Validaciones con `@Valid` y Jakarta Validation.
 - ✅ Búsqueda por nombre ignorando mayúsculas/minúsculas.
+- ✅ Filtros avanzados por precio mínimo, precio máximo y disponibilidad.
 - ✅ Paginación backend con `Page`, `Pageable` y `PageRequest`.
 - ✅ Frontend Astro consumiendo la API con `fetch`.
 - ✅ Componentes visuales `ProductCard` y `ProductForm`.
@@ -1113,14 +1201,17 @@ KimStore 2.0 ya cuenta con:
 - ✅ Entidad `Usuario` y `UsuarioRepository` para administradores.
 - ✅ Login en `/login` desde Astro.
 - ✅ Registro en `/register` conectado a `POST /api/auth/register`.
+- ✅ Registro con correo electrónico como identidad principal del usuario.
 - ✅ Endpoint `POST /api/auth/login` para generar JWT.
-- ✅ `AuthResponse` devuelve `token` y `role`.
+- ✅ `AuthResponse` devuelve `token`, `role` y `avatarUrl`.
 - ✅ `JwtService` y `JwtAuthenticationFilter` para validar tokens.
 - ✅ `SecurityConfig` con rutas públicas, rutas protegidas por rol, CORS y sesión stateless.
 - ✅ Dashboard admin con métricas de inventario en `/api/productos/dashboard/metrics`.
 - ✅ Usuario administrador inicial `kim` con contraseña `123456` para desarrollo.
 - ✅ Operaciones protegidas con header `Authorization: Bearer <token>`.
 - ✅ Control visual por rol con `kimstore_role` en `localStorage`.
+- ✅ Avatar de usuario guardado en `kimstore_avatar`.
+- ✅ Página `/perfil` para consultar cuenta y subir foto de perfil.
 - ✅ Acciones de administrador ocultas para usuarios no administradores.
 - ✅ Store de carrito persistente con Nano Stores.
 - ✅ Carrito migrado a `cartStore.ts` con interfaces TypeScript.
@@ -1134,6 +1225,10 @@ KimStore 2.0 ya cuenta con:
 - ✅ `PedidoRepository` para consultar compras por usuario.
 - ✅ `PedidoController` con compra autenticada e historial.
 - ✅ Página `/mis-compras` para mostrar pedidos del usuario.
+- ✅ `EmailService` con recibo HTML enviado por correo después de comprar.
+- ✅ Entidad `Resena`, `ResenaRepository` y `ResenaController`.
+- ✅ Reseñas públicas por producto y publicación protegida con JWT.
+- ✅ Datos mock de reseñas en frontend cuando aún no existen reseñas reales.
 
 ---
 
@@ -1141,7 +1236,7 @@ KimStore 2.0 ya cuenta con:
 
 - 🔁 Convertir también las respuestas del backend de `Producto` a `ProductoDTO`.
 - ⚠️ Agregar manejo global de errores con `@ControllerAdvice`.
-- 🔍 Agregar filtros avanzados por precio, stock o categoría.
+- 🔍 Agregar filtros por categoría o marca.
 - 🖼️ Agregar edición visual de imagen desde el modal o flujo de actualización.
 - 🧹 Eliminar imágenes antiguas de Cloudinary cuando se reemplacen o borren productos.
 - 🔐 Reemplazar el administrador de desarrollo por un flujo seguro de registro/gestión de usuarios.
@@ -1152,6 +1247,7 @@ KimStore 2.0 ya cuenta con:
 - 🎨 Mejorar visualmente `/productos` con filtros, estados vacíos y experiencia de usuario más cercana a e-commerce.
 - 🧾 Crear una página dedicada `/carrito` o checkout completo en lugar de depender solo de SweetAlert.
 - 🧮 Permitir aumentar/disminuir cantidades desde el modal del carrito.
+- 📧 Configurar proveedor SMTP real en producción para `EmailService`.
 - 🧪 Agregar pruebas unitarias para service y controller.
 - 🔢 Agregar selector de tamaño de página (`size`) en la interfaz.
 - 🚀 Desplegar backend en Render y conectar el frontend al dominio público de la API.

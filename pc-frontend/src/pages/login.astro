@@ -64,6 +64,7 @@ import Layout from '../layouts/Layout.astro';
   interface AuthResponse {
     token: string;
     role: string;
+    avatarUrl: string;
   }
 
   const API_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
@@ -95,6 +96,7 @@ import Layout from '../layouts/Layout.astro';
       const data: AuthResponse = await response.json();
       localStorage.setItem('kimstore_token', data.token);
       localStorage.setItem('kimstore_role', data.role);
+      localStorage.setItem('kimstore_avatar', data.avatarUrl || '');
 
       Swal.fire({
         icon: 'success',

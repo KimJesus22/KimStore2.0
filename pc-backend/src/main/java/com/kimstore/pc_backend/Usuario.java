@@ -24,6 +24,9 @@ public class Usuario {
     @Column(nullable = false)
     private String rol; // Ej: "ROLE_ADMIN" o "ROLE_USER"
 
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     // Constructores
     public Usuario() {
     }
@@ -46,4 +49,7 @@ public class Usuario {
 
     public String getRol() { return rol; }
     public void setRol(String rol) { this.rol = rol; }
+
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
 }

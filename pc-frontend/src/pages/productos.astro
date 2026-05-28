@@ -12,20 +12,34 @@ import ProductForm from '../components/ProductForm.astro';
           <span class="font-black text-xl text-gray-900 tracking-tight">KimStore <span class="text-blue-600">2.0</span></span>
         </div>
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-5">
           <a
+            id="btn-mis-compras"
             href="/mis-compras"
-            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+            class="hidden items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
           >
             📦 Mis Compras
           </a>
 
+          <a href="/perfil" class="flex items-center gap-3 hover:bg-gray-50 p-2 rounded-xl transition-colors border border-transparent hover:border-gray-200">
+            <img
+              id="nav-avatar"
+              src="https://ui-avatars.com/api/?name=User&background=eff6ff&color=1d4ed8"
+              alt="Perfil"
+              class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+            />
+            <div class="hidden md:block text-left">
+              <p class="text-sm font-bold text-gray-900 leading-tight">Mi Cuenta</p>
+              <p class="text-xs text-gray-500">Ajustes</p>
+            </div>
+          </a>
+
           <button
             id="btn-logout"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
+            class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Cerrar Sesión"
           >
-            Cerrar Sesión
-            <svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
             </svg>
           </button>
@@ -67,26 +81,64 @@ import ProductForm from '../components/ProductForm.astro';
       </div>
     </div>
 
-    <div class="mb-8 bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
-      <form class="flex flex-col sm:flex-row gap-4" action="/productos" method="GET">
-        <div class="relative flex-grow">
-          <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <span class="text-gray-400">🔍</span>
+    <div class="mb-8 bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+      <form action="/productos" method="GET" class="flex flex-col md:flex-row gap-4 items-end">
+        <div class="w-full md:flex-1">
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Buscar Equipo</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">🔍</span>
+            <input
+              id="buscar"
+              type="text"
+              name="buscar"
+              class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="Ej. Asus, Laptop, Mac..."
+            />
           </div>
+        </div>
+
+        <div class="w-full md:w-32">
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Min ($)</label>
           <input
-            id="buscar"
-            type="text"
-            name="buscar"
-            class="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors"
-            placeholder="Buscar computadora por nombre (ej. Asus, Laptop...)"
+            id="precio-min"
+            type="number"
+            name="min"
+            min="0"
+            step="100"
+            class="block w-full px-3 py-2.5 border border-gray-300 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-colors"
+            placeholder="0"
           />
         </div>
-        <button type="submit" class="inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-bold rounded-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm">
-          Buscar
-        </button>
-        <a id="limpiar-busqueda" href="/productos" class="hidden justify-center items-center px-6 py-3 border border-gray-200 text-base font-bold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition-colors shadow-sm">
-          Limpiar
-        </a>
+
+        <div class="w-full md:w-32">
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Max ($)</label>
+          <input
+            id="precio-max"
+            type="number"
+            name="max"
+            min="0"
+            step="100"
+            class="block w-full px-3 py-2.5 border border-gray-300 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-colors"
+            placeholder="99999"
+          />
+        </div>
+
+        <div class="w-full md:w-auto flex items-center pb-3">
+          <label class="relative inline-flex items-center cursor-pointer group">
+            <input id="solo-disponibles" type="checkbox" name="soloDisponibles" value="true" class="sr-only peer" />
+            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            <span class="ml-3 text-sm font-bold text-gray-700 group-hover:text-blue-600 transition-colors">Solo Disponibles</span>
+          </label>
+        </div>
+
+        <div class="w-full md:w-auto flex gap-2">
+          <button type="submit" class="flex-1 md:flex-none px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors shadow-sm">
+            Filtrar
+          </button>
+          <a id="limpiar-busqueda" href="/productos" class="hidden items-center justify-center px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl transition-colors">
+            ✖
+          </a>
+        </div>
       </form>
     </div>
 
@@ -124,11 +176,36 @@ import ProductForm from '../components/ProductForm.astro';
     cantidadStockBajo: number;
   }
 
+  interface Resena {
+    id: number;
+    username: string;
+    calificacion: number;
+    comentario: string;
+    fecha: string;
+  }
+
   const token = localStorage.getItem('kimstore_token');
   const role = localStorage.getItem('kimstore_role');
+  const navAvatar = document.getElementById('nav-avatar') as HTMLImageElement;
+  const savedAvatar = localStorage.getItem('kimstore_avatar');
+  const btnMisCompras = document.getElementById('btn-mis-compras');
 
   if (!token) {
     window.location.href = '/login';
+  }
+
+  if (navAvatar) {
+    if (savedAvatar) {
+      navAvatar.src = savedAvatar;
+    } else {
+      const username = token ? 'User' : 'Anon';
+      navAvatar.src = `https://ui-avatars.com/api/?name=${username}&background=eff6ff&color=1d4ed8`;
+    }
+  }
+
+  if (role === 'ROLE_USER' && btnMisCompras) {
+    btnMisCompras.classList.remove('hidden');
+    btnMisCompras.classList.add('inline-flex');
   }
 
   const formColumna = document.getElementById('form-columna');
@@ -147,9 +224,10 @@ import ProductForm from '../components/ProductForm.astro';
     panelesAdmin.forEach(panel => panel.classList.remove('hidden'));
   };
 
-  const API_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
-    ? 'http://localhost:8080/api/productos'
-    : 'https://kimstore-api-backend.onrender.com/api/productos';
+  const API_BASE_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+    ? 'http://localhost:8080/api'
+    : 'https://kimstore-api-backend.onrender.com/api';
+  const API_URL = `${API_BASE_URL}/productos`;
 
   const cargarMetricas = async () => {
     try {
@@ -192,6 +270,9 @@ import ProductForm from '../components/ProductForm.astro';
   }
 
   const buscarInput = document.getElementById('buscar') as HTMLInputElement;
+  const precioMinInput = document.getElementById('precio-min') as HTMLInputElement;
+  const precioMaxInput = document.getElementById('precio-max') as HTMLInputElement;
+  const soloDisponiblesInput = document.getElementById('solo-disponibles') as HTMLInputElement;
   const limpiarBusqueda = document.getElementById('limpiar-busqueda') as HTMLAnchorElement;
   const estadoProductos = document.getElementById('estado-productos') as HTMLDivElement;
   const productosGrid = document.getElementById('productos-grid') as HTMLDivElement;
@@ -203,9 +284,35 @@ import ProductForm from '../components/ProductForm.astro';
     return elemento.innerHTML;
   };
 
-  const crearUrlPagina = (buscar: string, page: number) => {
+  const MOCK_RESENAS: Resena[] = [
+    {
+      id: -1,
+      username: 'MarianaTech',
+      calificacion: 5,
+      comentario: 'La computadora llegó impecable, rápida y lista para trabajar. El rendimiento en multitarea se siente muy sólido.',
+      fecha: 'Demo'
+    },
+    {
+      id: -2,
+      username: 'SetupGamer',
+      calificacion: 4,
+      comentario: 'Muy buena relación precio-rendimiento. La compraría de nuevo para un setup de oficina o gaming casual.',
+      fecha: 'Demo'
+    }
+  ];
+
+  const crearUrlPaginaConFiltros = (
+    buscar: string,
+    page: number,
+    min: string,
+    max: string,
+    soloDisponibles: boolean
+  ) => {
     const params = new URLSearchParams();
     if (buscar) params.set('buscar', buscar);
+    if (min) params.set('min', min);
+    if (max) params.set('max', max);
+    if (soloDisponibles) params.set('soloDisponibles', 'true');
     params.set('page', page.toString());
     return `/productos?${params.toString()}`;
   };
@@ -245,6 +352,14 @@ import ProductForm from '../components/ProductForm.astro';
           >
             <span>${producto.stock > 0 ? 'Añadir al carrito' : 'Sin inventario'}</span>
             <span class="text-lg">🛒</span>
+          </button>
+
+          <button
+            class="btn-ver-resenas w-full bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold py-2.5 px-4 rounded-xl transition-colors flex justify-center items-center gap-2 border border-gray-200"
+            data-id="${producto.id}"
+            data-nombre="${escaparHtml(producto.nombre)}"
+          >
+            <span>⭐ Opiniones y Reseñas</span>
           </button>
 
           <div data-admin-actions class="flex justify-between items-center border-t border-gray-100 pt-3 hidden">
@@ -290,6 +405,143 @@ import ProductForm from '../components/ProductForm.astro';
           background: '#1F2937',
           color: '#fff'
         });
+      });
+    });
+
+    document.querySelectorAll('.btn-ver-resenas').forEach(boton => {
+      boton.addEventListener('click', async () => {
+        const id = (boton as HTMLButtonElement).getAttribute('data-id');
+        const nombre = (boton as HTMLButtonElement).getAttribute('data-nombre') || 'este producto';
+
+        if (!id) return;
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/resenas/producto/${id}`);
+          if (!response.ok) throw new Error('No se pudieron cargar las reseñas');
+
+          const resenas: Resena[] = await response.json();
+          let htmlResenas = '<div class="text-left space-y-3 max-h-72 overflow-y-auto p-1 mt-4">';
+
+          const resenasVisibles = resenas.length > 0 ? resenas : MOCK_RESENAS;
+
+          if (resenas.length === 0) {
+            htmlResenas += `
+              <div class="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-blue-800">
+                <p class="text-sm font-bold">Reseñas de ejemplo</p>
+                <p class="text-xs mt-1">Aún no hay reseñas reales para este producto. Estas tarjetas son mock para previsualizar el diseño.</p>
+              </div>`;
+          }
+
+          resenasVisibles.forEach(resena => {
+              const estrellas = '⭐'.repeat(resena.calificacion);
+              const estrellasVacias = '☆'.repeat(5 - resena.calificacion);
+
+              htmlResenas += `
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                  <div class="flex justify-between items-center mb-2">
+                    <span class="font-bold text-gray-800 flex items-center gap-2">👤 ${escaparHtml(resena.username)}</span>
+                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">${escaparHtml(resena.fecha)}</span>
+                  </div>
+                  <div class="text-yellow-400 text-sm mb-2 tracking-widest">${estrellas}<span class="text-gray-300">${estrellasVacias}</span></div>
+                  <p class="text-sm text-gray-600 leading-relaxed">${escaparHtml(resena.comentario)}</p>
+                </div>
+              `;
+            });
+
+          htmlResenas += '</div>';
+
+          const modalLista = await Swal.fire({
+            title: `<span class="text-xl font-bold">Reseñas de ${escaparHtml(nombre)}</span>`,
+            html: htmlResenas,
+            showCancelButton: true,
+            confirmButtonText: '✍️ Escribir Reseña',
+            cancelButtonText: 'Cerrar',
+            confirmButtonColor: '#3B82F6',
+            cancelButtonColor: '#6B7280',
+            width: '32em'
+          });
+
+          if (!modalLista.isConfirmed) return;
+
+          const token = localStorage.getItem('kimstore_token');
+          if (!token) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'Acceso Denegado',
+              text: 'Debes iniciar sesión para dejar una reseña.'
+            });
+            return;
+          }
+
+          const formModal = await Swal.fire({
+            title: 'Califica este producto',
+            html: `
+              <div class="space-y-4 text-left mt-4">
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-1">Estrellas</label>
+                  <select id="input-estrellas" class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <option value="5">⭐⭐⭐⭐⭐ (5) ¡Excelente!</option>
+                    <option value="4">⭐⭐⭐⭐ (4) Muy bueno</option>
+                    <option value="3">⭐⭐⭐ (3) Bueno</option>
+                    <option value="2">⭐⭐ (2) Regular</option>
+                    <option value="1">⭐ (1) Malo</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-1">Comentario</label>
+                  <textarea id="input-comentario" rows="3" placeholder="¿Qué te pareció el producto?" class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"></textarea>
+                </div>
+              </div>
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Publicar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#10B981',
+            preConfirm: () => {
+              const estrellas = (document.getElementById('input-estrellas') as HTMLSelectElement).value;
+              const comentario = (document.getElementById('input-comentario') as HTMLTextAreaElement).value;
+
+              if (!comentario.trim()) {
+                Swal.showValidationMessage('Por favor escribe un comentario');
+                return false;
+              }
+
+              return {
+                calificacion: parseInt(estrellas),
+                comentario
+              };
+            }
+          });
+
+          if (!formModal.value) return;
+
+          const peticionPost = await fetch(`${API_BASE_URL}/resenas`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              productoId: Number(id),
+              calificacion: formModal.value.calificacion,
+              comentario: formModal.value.comentario
+            })
+          });
+
+          if (!peticionPost.ok) {
+            const errorData = await peticionPost.json();
+            throw new Error(errorData.error || 'Error al publicar la reseña');
+          }
+
+          Swal.fire('¡Gracias!', 'Tu reseña ha sido publicada con éxito.', 'success');
+        } catch (error: unknown) {
+          Swal.fire(
+            'Error',
+            error instanceof Error ? error.message : 'No se pudo completar la acción',
+            'error'
+          );
+        }
       });
     });
 
@@ -381,16 +633,28 @@ import ProductForm from '../components/ProductForm.astro';
   const cargarProductos = async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const buscar = urlParams.get('buscar') || '';
+    const min = urlParams.get('min') || '';
+    const max = urlParams.get('max') || '';
+    const soloDisponibles = urlParams.get('soloDisponibles') === 'true';
     const paginaActual = parseInt(urlParams.get('page') || '0');
+    const usaFiltrosAvanzados = Boolean(min || max || soloDisponibles);
 
     buscarInput.value = buscar;
-    limpiarBusqueda.classList.toggle('hidden', !buscar);
-    limpiarBusqueda.classList.toggle('inline-flex', Boolean(buscar));
+    precioMinInput.value = min;
+    precioMaxInput.value = max;
+    soloDisponiblesInput.checked = soloDisponibles;
+    limpiarBusqueda.classList.toggle('hidden', !(buscar || usaFiltrosAvanzados));
+    limpiarBusqueda.classList.toggle('inline-flex', Boolean(buscar || usaFiltrosAvanzados));
 
     const apiParams = new URLSearchParams();
     if (buscar) apiParams.set('buscar', buscar);
-    apiParams.set('page', paginaActual.toString());
-    apiParams.set('size', '6');
+    if (min) apiParams.set('min', min);
+    if (max) apiParams.set('max', max);
+    if (soloDisponibles) apiParams.set('soloDisponibles', 'true');
+    if (!usaFiltrosAvanzados) {
+      apiParams.set('page', paginaActual.toString());
+      apiParams.set('size', '6');
+    }
 
     try {
       const respuesta = await fetch(`${API_URL}?${apiParams.toString()}`);
@@ -400,24 +664,24 @@ import ProductForm from '../components/ProductForm.astro';
       }
 
       const data = await respuesta.json();
-      const productos: Producto[] = data.content || [];
-      const totalPaginas = data.totalPages || 0;
+      const productos: Producto[] = Array.isArray(data) ? data : data.content || [];
+      const totalPaginas = Array.isArray(data) ? 0 : data.totalPages || 0;
 
       productosGrid.innerHTML = productos.map(crearCardProducto).join('');
       estadoProductos.classList.toggle('hidden', productos.length > 0);
-      estadoProductos.textContent = buscar
-        ? `No se encontraron productos para "${buscar}".`
+      estadoProductos.textContent = buscar || usaFiltrosAvanzados
+        ? 'No se encontraron productos con esos filtros.'
         : 'No hay productos registrados todavía.';
 
       paginacion.innerHTML = `
         ${paginaActual > 0
-          ? `<a href="${crearUrlPagina(buscar, paginaActual - 1)}" class="bg-white hover:bg-gray-50 text-gray-700 font-bold px-4 py-2 rounded-xl transition-colors border border-gray-200 shadow-sm">Anterior</a>`
+          ? `<a href="${crearUrlPaginaConFiltros(buscar, paginaActual - 1, min, max, soloDisponibles)}" class="bg-white hover:bg-gray-50 text-gray-700 font-bold px-4 py-2 rounded-xl transition-colors border border-gray-200 shadow-sm">Anterior</a>`
           : ''}
         ${totalPaginas > 0
           ? `<span class="px-4 py-2 text-gray-500 font-medium bg-white border border-gray-200 rounded-xl shadow-sm">Página ${paginaActual + 1} de ${totalPaginas}</span>`
           : ''}
         ${paginaActual < totalPaginas - 1
-          ? `<a href="${crearUrlPagina(buscar, paginaActual + 1)}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl transition-colors shadow-sm">Siguiente</a>`
+          ? `<a href="${crearUrlPaginaConFiltros(buscar, paginaActual + 1, min, max, soloDisponibles)}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl transition-colors shadow-sm">Siguiente</a>`
           : ''}
       `;
 

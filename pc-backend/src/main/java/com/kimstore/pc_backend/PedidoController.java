@@ -32,6 +32,9 @@ public class PedidoController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private EmailService emailService;
+
     @PostMapping("/comprar")
     @Transactional
     public ResponseEntity<?> procesarCompra(@RequestBody List<ItemCompraDTO> carrito, Principal principal) {
@@ -72,6 +75,8 @@ public class PedidoController {
         pedido.setTotal(totalPedido);
         pedido.setItems(itemsPedido);
         pedidoRepository.save(pedido);
+
+        emailService.enviarReciboCompra(usuario.getUsername(), pedido);
 
         return ResponseEntity.ok(Map.of("mensaje", "Compra registrada exitosamente"));
     }

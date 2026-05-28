@@ -62,6 +62,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/pedidos/comprar").authenticated()
                         .requestMatchers("/api/pedidos/mis-compras").authenticated()
 
+                        // Reglas de resenas
+                        .requestMatchers(HttpMethod.GET, "/api/resenas/producto/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/resenas").authenticated()
+
+                        // Reglas de usuario / perfil
+                        .requestMatchers("/api/usuarios/**").authenticated()
+
                         // Cualquier otra peticion requiere estar autenticado
                         .anyRequest().authenticated()
                 )

@@ -32,12 +32,34 @@ public class ProductoController {
     private CloudinaryService cloudinaryService;
 
     @GetMapping
-    public Page<Producto> listar(
+    public ResponseEntity<?> listar(
             @RequestParam(required = false) String buscar,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "6") int size) {
+            @RequestParam(defaultValue = "6") int size,
+            @RequestParam(required = false) Double min,
+            @RequestParam(required = false) Double max,
+            @RequestParam(required = false) Boolean soloDisponibles) {
 
-        return productoService.buscarPorNombrePagina(buscar, page, size);
+        boolean usaFiltrosAvanzados = min != null || max != null || soloDisponibles != null;
+
+        if (usaFiltrosAvanzados) {
+            double precioMin = min != null ? min : 0;
+            double precioMax = max != null ? max : 9999999;
+            int stockRequerido = Boolean.TRUE.equals(soloDisponibles) ? 1 : 0;
+            String textoBusqueda = buscar != null ? buscar : "";
+
+            List<Producto> productos = productoRepository.buscarConFiltros(
+                    textoBusqueda,
+                    precioMin,
+                    precioMax,
+                    stockRequerido
+            );
+
+            return ResponseEntity.ok(productos);
+        }
+
+        Page<Producto> productos = productoService.buscarPorNombrePagina(buscar, page, size);
+        return ResponseEntity.ok(productos);
     }
 
     @PostMapping(consumes = {"multipart/form-data"})

@@ -1,0 +1,156 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Mi Perfil | KimStore 2.0">
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <a href="/productos" class="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors font-bold text-sm">
+          ⬅️ Volver a la Tienda
+        </a>
+        <h1 class="font-black text-xl text-gray-900">Mi <span class="text-blue-600">Perfil</span></h1>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-2xl mx-auto px-4 py-12">
+    <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+      <div class="h-32 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
+
+      <div class="px-8 pb-8">
+        <div class="relative flex justify-center -mt-16 mb-6">
+          <div class="relative">
+            <img
+              id="avatar-preview"
+              src="https://ui-avatars.com/api/?name=User&background=E5E7EB&color=374151&size=150"
+              alt="Avatar"
+              class="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-white"
+            />
+            <label for="input-avatar" class="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full cursor-pointer shadow-md transition-transform hover:scale-110">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+            </label>
+            <input type="file" id="input-avatar" class="hidden" accept="image/*" />
+          </div>
+        </div>
+
+        <div class="text-center space-y-2">
+          <h2 id="txt-username" class="text-3xl font-black text-gray-900">Cargando...</h2>
+          <p id="txt-rol" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gray-100 text-gray-600">
+            Cargando Rol
+          </p>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import Swal from 'sweetalert2';
+
+  interface PerfilResponse {
+    username: string;
+    rol: string;
+    avatarUrl: string;
+  }
+
+  interface AvatarResponse {
+    mensaje: string;
+    avatarUrl: string;
+  }
+
+  const token = localStorage.getItem('kimstore_token');
+  const API_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+    ? 'http://localhost:8080/api/usuarios'
+    : 'https://kimstore-api-backend.onrender.com/api/usuarios';
+
+  if (!token) window.location.href = '/login';
+
+  const avatarPreview = document.getElementById('avatar-preview') as HTMLImageElement;
+  const txtUsername = document.getElementById('txt-username');
+  const txtRol = document.getElementById('txt-rol');
+  const inputAvatar = document.getElementById('input-avatar') as HTMLInputElement;
+
+  async function cargarPerfil() {
+    try {
+      const response = await fetch(`${API_URL}/perfil`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Error al cargar perfil');
+
+      const data: PerfilResponse = await response.json();
+
+      if (txtUsername) txtUsername.textContent = `@${data.username}`;
+
+      if (txtRol) {
+        txtRol.textContent = data.rol === 'ROLE_ADMIN' ? 'Administrador 👑' : 'Cliente Especial 🛍️';
+
+        if (data.rol === 'ROLE_ADMIN') {
+          txtRol.classList.replace('bg-gray-100', 'bg-yellow-100');
+          txtRol.classList.replace('text-gray-600', 'text-yellow-800');
+        }
+      }
+
+      if (data.avatarUrl) {
+        avatarPreview.src = data.avatarUrl;
+        localStorage.setItem('kimstore_avatar', data.avatarUrl);
+      } else {
+        avatarPreview.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.username)}&background=eff6ff&color=1d4ed8&size=150`;
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  cargarPerfil();
+
+  inputAvatar?.addEventListener('change', async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('imagen', file);
+
+    Swal.fire({
+      title: 'Subiendo foto...',
+      text: 'Por favor espera',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    try {
+      const response = await fetch(`${API_URL}/avatar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) throw new Error('Error al subir la imagen');
+
+      const data: AvatarResponse = await response.json();
+
+      avatarPreview.src = data.avatarUrl;
+      localStorage.setItem('kimstore_avatar', data.avatarUrl);
+
+      Swal.fire('¡Éxito!', 'Tu foto de perfil se ha actualizado.', 'success').then(() => {
+        window.location.reload();
+      });
+    } catch (error: unknown) {
+      Swal.fire(
+        'Error',
+        error instanceof Error ? error.message : 'No se pudo subir la imagen',
+        'error'
+      );
+    }
+  });
+</script>

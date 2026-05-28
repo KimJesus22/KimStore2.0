@@ -52,18 +52,23 @@ public class AuthController {
                 .findFirst()
                 .orElse("ROLE_USER");
 
-        return ResponseEntity.ok(new com.kimstore.pc_backend.dto.AuthResponse(tokenGenerado, userRole));
+        Usuario usuario = usuarioRepository.findByUsername(request.username())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        String avatar = usuario.getAvatarUrl() != null ? usuario.getAvatarUrl() : "";
+
+        return ResponseEntity.ok(new com.kimstore.pc_backend.dto.AuthResponse(tokenGenerado, userRole, avatar));
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
-        Optional<Usuario> usuarioExistente = usuarioRepository.findByUsername(request.username());
+        Optional<Usuario> usuarioExistente = usuarioRepository.findByUsername(request.email());
         if (usuarioExistente.isPresent()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "El nombre de usuario ya esta en uso"));
+            return ResponseEntity.badRequest().body(Map.of("error", "El correo electronico ya esta en uso"));
         }
 
         Usuario nuevoUsuario = new Usuario();
-        nuevoUsuario.setUsername(request.username());
+        nuevoUsuario.setUsername(request.email());
         nuevoUsuario.setPassword(passwordEncoder.encode(request.password()));
         nuevoUsuario.setRol("ROLE_USER");
 

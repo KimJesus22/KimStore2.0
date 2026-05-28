@@ -168,8 +168,10 @@ const { title = 'KimStore 2.0' } = Astro.props;
 
 								Swal.fire({
 									icon: 'success',
-									title: '¡Compra exitosa!',
-									text: 'Gracias por tu preferencia en KimStore.',
+									title: '¡Compra Completada!',
+									text: 'Hemos enviado un recibo detallado con tu orden directamente a tu correo electrónico.',
+									confirmButtonColor: '#2563eb',
+									confirmButtonText: 'Excelente'
 								}).then(() => {
 									window.location.reload();
 								});
