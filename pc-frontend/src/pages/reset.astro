@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="Iniciar Sesión | KimStore 2.0">
+<Layout title="Nueva Contraseña | KimStore 2.0">
   <main class="relative min-h-screen flex items-center justify-center bg-[#030712] px-4 overflow-hidden">
     <!-- Grid sutil de fondo -->
     <div class="grid-overlay"></div>
@@ -14,42 +14,40 @@ import Layout from '../layouts/Layout.astro';
       <div class="orb orb-3"></div>
     </div>
 
-    <!-- Card de Login Glassmorphism -->
+    <!-- Card de Reset Glassmorphism -->
     <div class="relative z-10 max-w-md w-full bg-white/[0.02] border border-white/[0.07] backdrop-blur-2xl p-8 sm:p-10 rounded-3xl shadow-2xl transition-all duration-500 hover:border-white/[0.12]">
       <div class="text-center mb-8">
         <!-- Logo Badge -->
         <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-blue-500/30 bg-blue-500/5 text-blue-400 text-xs font-bold uppercase tracking-wider mb-4 animate-pulse">
           <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-          Acceso Seguro
+          Establecer Acceso
         </div>
-        <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Bienvenido</h2>
+        <h2 class="text-3xl font-extrabold text-white tracking-tight">Crea una Nueva Contraseña ✨</h2>
         <p class="mt-2 text-sm text-gray-400">
-          Ingresa tus credenciales para acceder al inventario
+          Escribe tu nueva clave de acceso para restablecer tu cuenta.
         </p>
       </div>
 
-      <form id="login-form" method="post" class="space-y-5">
+      <form id="form-reset" class="space-y-5" onsubmit="event.preventDefault();">
         <div class="space-y-4">
           <div>
-            <label for="username" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Usuario</label>
+            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Nueva Contraseña</label>
             <input
-              id="username"
-              name="username"
-              type="text"
-              required
-              class="custom-input block w-full px-4 py-3 border border-white/10 rounded-xl bg-white/[0.03] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/60 focus:bg-white/[0.06] transition-all duration-300 placeholder-gray-600 shadow-inner"
-              placeholder="Ej. kim"
-            />
-          </div>
-          <div>
-            <label for="password" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Contraseña</label>
-            <input
-              id="password"
-              name="password"
+              id="input-password"
               type="password"
               required
               class="custom-input block w-full px-4 py-3 border border-white/10 rounded-xl bg-white/[0.03] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/60 focus:bg-white/[0.06] transition-all duration-300 placeholder-gray-600 shadow-inner"
-              placeholder="••••••••"
+              placeholder="Escribe tu nueva contraseña"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Confirmar Contraseña</label>
+            <input
+              id="input-confirmar"
+              type="password"
+              required
+              class="custom-input block w-full px-4 py-3 border border-white/10 rounded-xl bg-white/[0.03] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/60 focus:bg-white/[0.06] transition-all duration-300 placeholder-gray-600 shadow-inner"
+              placeholder="Confirma tu nueva contraseña"
             />
           </div>
         </div>
@@ -58,18 +56,9 @@ import Layout from '../layouts/Layout.astro';
           type="submit"
           class="btn-gradient w-full flex justify-center items-center py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-lg shadow-blue-500/20 active:scale-[0.98] cursor-pointer"
         >
-          Iniciar Sesión
+          Actualizar y Entrar
         </button>
       </form>
-
-      <div class="text-center mt-6 border-t border-white/5 pt-6">
-        <p class="text-sm text-gray-400">
-          ¿No tienes una cuenta?
-          <a href="/register" class="font-bold text-blue-400 hover:text-blue-300 hover:underline transition-colors ml-1">
-            Regístrate aquí
-          </a>
-        </p>
-      </div>
     </div>
   </main>
 </Layout>
@@ -145,71 +134,80 @@ import Layout from '../layouts/Layout.astro';
 <script>
   import Swal from 'sweetalert2';
 
-  interface AuthResponse {
-    token: string;
-    role: string;
-    avatarUrl: string;
-  }
-
+  const form = document.getElementById('form-reset');
   const API_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
-    ? 'http://localhost:8080/api/auth/login'
-    : 'https://kimstore-api-backend.onrender.com/api/auth/login';
+    ? 'http://localhost:8080/api/auth/reset-password'
+    : 'https://kimstore-api-backend.onrender.com/api/auth/reset-password';
 
-  const loginForm = document.getElementById('login-form') as HTMLFormElement | null;
+  form?.addEventListener('submit', async () => {
+    const password = (document.getElementById('input-password') as HTMLInputElement).value;
+    const confirmar = (document.getElementById('input-confirmar') as HTMLInputElement).value;
+    
+    // Extraemos el token de la URL sin tocar el frontmatter de Astro
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
 
-  loginForm?.addEventListener('submit', async (e: Event) => {
-    e.preventDefault();
+    if (!token) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Enlace Inválido',
+        text: 'No se detectó un código de seguridad seguro.',
+        background: '#1F2937',
+        color: '#fff',
+        confirmButtonColor: '#EF4444'
+      });
+      return;
+    }
 
-    const formData = new FormData(loginForm);
-    const username = formData.get('username') as string;
-    const password = formData.get('password') as string;
+    if (password !== confirmar) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Las contraseñas no coinciden',
+        text: 'Por favor, escríbelas de manera idéntica.',
+        background: '#1F2937',
+        color: '#fff',
+        confirmButtonColor: '#3B82F6'
+      });
+      return;
+    }
 
-    // Alerta de carga
     Swal.fire({
-      title: 'Iniciando sesión...',
-      text: 'Validando credenciales corporativas',
+      title: 'Actualizando...',
+      text: 'Registrando tu nueva clave de acceso seguro',
       allowOutsideClick: false,
       background: '#1F2937',
       color: '#fff',
-      didOpen: () => {
-        Swal.showLoading();
-      }
+      didOpen: () => Swal.showLoading()
     });
 
     try {
       const response = await fetch(API_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ username, password })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token, nuevaPassword: password })
       });
 
       if (!response.ok) {
-        throw new Error('Usuario o contraseña incorrectos');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'El enlace caducó');
       }
-
-      const data: AuthResponse = await response.json();
-      localStorage.setItem('kimstore_token', data.token);
-      localStorage.setItem('kimstore_role', data.role);
-      localStorage.setItem('kimstore_avatar', data.avatarUrl || '');
 
       Swal.fire({
         icon: 'success',
-        title: '¡Acceso concedido!',
-        text: 'Redirigiendo al panel...',
-        timer: 1500,
-        showConfirmButton: false,
+        title: '¡Contraseña Actualizada!',
+        text: 'Tu acceso ha sido restablecido con éxito.',
+        confirmButtonColor: '#3B82F6',
         background: '#1F2937',
         color: '#fff'
       }).then(() => {
-        window.location.href = '/productos';
+        window.location.href = '/login';
       });
-    } catch (error) {
+
+    } catch (error: any) {
       Swal.fire({
         icon: 'error',
-        title: 'Error de acceso',
-        text: error instanceof Error ? error.message : 'Ha ocurrido un error inesperado.',
+        title: 'Error',
+        text: error.message || 'No se pudo restablecer la contraseña.',
         background: '#1F2937',
         color: '#fff',
         confirmButtonColor: '#EF4444'

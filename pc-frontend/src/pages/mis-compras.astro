@@ -3,25 +3,102 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="Mis Compras | KimStore 2.0">
-  <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-16">
-        <a href="/productos" class="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors font-bold text-sm">
-          ⬅️ Volver a la Tienda
-        </a>
-        <h1 class="font-black text-xl text-gray-900">Historial de <span class="text-blue-600">Pedidos</span></h1>
-      </div>
-    </div>
-  </header>
+  <div class="relative min-h-screen bg-[#030712] text-white pb-16 overflow-hidden">
+    <!-- Grid sutil de fondo -->
+    <div class="grid-overlay"></div>
 
-  <main class="max-w-3xl mx-auto px-4 py-8">
-    <div id="historial-contenedor" class="space-y-6">
-      <div class="text-center py-12 text-gray-500 font-medium animate-pulse">
-        Cargando tus recibos de compra...
-      </div>
+    <!-- Orbes Flotantes con Desenfoque (Aesthetics Premium) -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
     </div>
-  </main>
+
+    <header class="bg-gray-950/70 border-b border-white/5 sticky top-0 z-40 backdrop-blur-md relative">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <a href="/productos" class="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition-colors font-bold text-sm cursor-pointer">
+            ⬅️ Volver a la Tienda
+          </a>
+          <h1 class="font-black text-xl text-white">Historial de <span class="text-blue-500">Pedidos 📦</span></h1>
+        </div>
+      </div>
+    </header>
+
+    <main class="relative z-10 max-w-3xl mx-auto px-4 py-8">
+      <div id="historial-contenedor" class="space-y-6">
+        <div class="text-center py-12 text-gray-400 font-bold animate-pulse">
+          Cargando tus recibos de compra...
+        </div>
+      </div>
+    </main>
+  </div>
 </Layout>
+
+<style>
+  /* ===== GRID DE FONDO ===== */
+  .grid-overlay {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(circle at center, black, transparent 90%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ===== FLOATING ORBS ===== */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(140px);
+    opacity: 0.08;
+    animation: floating 25s infinite ease-in-out alternate;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .orb-1 {
+    width: 450px;
+    height: 450px;
+    background: rgba(59, 130, 246, 0.5);
+    top: -10%;
+    left: -5%;
+    animation-duration: 20s;
+  }
+
+  .orb-2 {
+    width: 500px;
+    height: 500px;
+    background: rgba(99, 102, 241, 0.5);
+    bottom: -10%;
+    right: -5%;
+    animation-duration: 25s;
+    animation-delay: -5s;
+  }
+
+  .orb-3 {
+    width: 300px;
+    height: 300px;
+    background: rgba(168, 85, 247, 0.4);
+    top: 35%;
+    left: 40%;
+    animation-duration: 30s;
+    animation-delay: -10s;
+  }
+
+  @keyframes floating {
+    0% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(45px, -45px) scale(1.1);
+    }
+    100% {
+      transform: translate(-25px, 25px) scale(0.9);
+    }
+  }
+</style>
 
 <script>
   interface ItemPedido {
@@ -71,10 +148,11 @@ import Layout from '../layouts/Layout.astro';
 
       if (pedidos.length === 0) {
         contenedor.innerHTML = `
-          <div class="bg-white p-8 rounded-2xl border border-gray-200 text-center text-gray-500">
-            <span class="text-4xl block mb-2">🛒</span>
-            <p class="font-bold text-lg text-gray-800">Aún no has comprado nada</p>
-            <p class="text-sm mt-1">Tus compras completadas aparecerán listadas aquí.</p>
+          <div class="bg-white/[0.02] border border-white/[0.07] backdrop-blur-xl p-10 rounded-3xl shadow-lg text-center text-gray-400">
+            <span class="text-5xl block mb-4">🛒</span>
+            <p class="font-bold text-xl text-white">Aún no has realizado compras</p>
+            <p class="text-sm text-gray-400 mt-2">Tus pedidos completados aparecerán listados aquí para que los gestiones.</p>
+            <a href="/productos" class="inline-block mt-6 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md shadow-blue-500/20 cursor-pointer">Comenzar a Comprar</a>
           </div>
         `;
         return;
@@ -82,30 +160,30 @@ import Layout from '../layouts/Layout.astro';
 
       pedidos.forEach(pedido => {
         const tarjeta = document.createElement('div');
-        tarjeta.className = 'bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden';
+        tarjeta.className = 'bg-white/[0.02] border border-white/[0.07] backdrop-blur-xl rounded-3xl shadow-lg overflow-hidden transition-all duration-300 hover:border-white/[0.12]';
 
         let htmlContent = `
-          <div class="bg-gray-50 p-4 border-b border-gray-200 flex justify-between items-center sm:px-6">
+          <div class="bg-white/[0.02] p-4 sm:p-5 border-b border-white/5 flex justify-between items-center sm:px-6">
             <div>
-              <p class="text-xs font-bold text-gray-400 uppercase">Pedido #${pedido.id}</p>
-              <p class="text-sm font-semibold text-gray-600 mt-0.5">${escaparHtml(pedido.fecha)}</p>
+              <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Pedido #${pedido.id}</p>
+              <p class="text-sm font-semibold text-gray-300 mt-1">${escaparHtml(pedido.fecha)}</p>
             </div>
             <div class="text-right">
-              <p class="text-xs font-bold text-gray-400 uppercase">Total Pagado</p>
-              <p class="text-xl font-black text-green-600 mt-0.5">$${pedido.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+              <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Pagado</p>
+              <p class="text-xl font-black text-green-400 mt-1">$${pedido.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
             </div>
           </div>
-          <div class="p-4 sm:p-6 divide-y divide-gray-100">
+          <div class="p-5 sm:p-6 divide-y divide-white/5">
         `;
 
         pedido.items.forEach(item => {
           htmlContent += `
-            <div class="flex justify-between items-center py-3 first:pt-0 last:pb-0">
+            <div class="flex justify-between items-center py-4 first:pt-0 last:pb-0">
               <div>
-                <p class="font-bold text-gray-800 text-base">${escaparHtml(item.nombreProducto)}</p>
-                <p class="text-xs text-gray-500 mt-0.5">Cantidad: ${item.cantidad} x $${item.precioUnitario.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+                <p class="font-bold text-white text-base">${escaparHtml(item.nombreProducto)}</p>
+                <p class="text-xs text-gray-400 mt-1">Cantidad: ${item.cantidad} x $${item.precioUnitario.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
               </div>
-              <p class="font-bold text-gray-900">$${(item.cantidad * item.precioUnitario).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+              <p class="font-bold text-white">$${(item.cantidad * item.precioUnitario).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
             </div>
           `;
         });
@@ -116,7 +194,7 @@ import Layout from '../layouts/Layout.astro';
       });
     } catch {
       if (contenedor) {
-        contenedor.innerHTML = '<div class="text-center text-red-500 font-bold p-4">Error al conectar con el servidor.</div>';
+        contenedor.innerHTML = '<div class="text-center text-red-400 font-bold p-6 bg-red-500/5 border border-red-500/20 rounded-3xl">Error al conectar con el servidor para descargar el historial.</div>';
       }
     }
   }

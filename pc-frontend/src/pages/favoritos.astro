@@ -1,0 +1,143 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Mis Favoritos | KimStore 2.0">
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <a href="/productos" class="flex items-center gap-2 text-gray-600 hover:text-blue-600 font-bold text-sm">
+          ⬅️ Volver a la Tienda
+        </a>
+        <h1 class="font-black text-xl text-gray-900">Lista de <span class="text-red-500">Deseos ❤️</span></h1>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div id="grid-favoritos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="col-span-full text-center py-12 text-gray-400 font-bold animate-pulse">
+        Cargando tus favoritos...
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { agregarAlCarrito } from '../store/cartStore';
+  import type { Producto } from '../store/cartStore';
+  import Swal from 'sweetalert2';
+
+  const token = localStorage.getItem('kimstore_token');
+  if (!token) window.location.href = '/login';
+
+  const gridFavoritos = document.getElementById('grid-favoritos');
+
+  const API_BASE_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+    ? 'http://localhost:8080/api'
+    : 'https://kimstore-api-backend.onrender.com/api';
+
+  function crearCard(producto: Producto) {
+    const productoStr = JSON.stringify(producto).replace(/"/g, '&quot;');
+    const imagen = producto.imageUrl ? `<img src="${producto.imageUrl}" class="w-full h-full object-cover" />` : `<span class="text-6xl">💻</span>`;
+
+    return `
+      <div class="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full hover:shadow-lg transition-all duration-300">
+        <div class="h-40 bg-gray-50 relative flex justify-center items-center">
+          ${imagen}
+          <button class="btn-remove-fav absolute top-3 right-3 bg-white p-2 rounded-full shadow hover:scale-110 cursor-pointer text-sm hover:bg-red-50 transition-all border border-gray-100" data-id="${producto.id}" title="Eliminar de favoritos">
+            ❌
+          </button>
+        </div>
+        <div class="p-4 flex flex-col flex-grow">
+          <h3 class="font-bold text-gray-900 line-clamp-1">${producto.nombre}</h3>
+          <div class="text-xl font-black text-blue-600 my-2">$${producto.precio.toLocaleString()}</div>
+          <button class="btn-add-cart mt-auto w-full bg-gray-900 hover:bg-black text-white font-bold py-2 rounded-xl transition-colors disabled:opacity-50 cursor-pointer" data-producto="${productoStr}" ${producto.stock === 0 ? 'disabled' : ''}>
+            Añadir 🛒
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  async function cargarFavoritos() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/wishlist`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const favoritos = await response.json();
+
+      if (!gridFavoritos) return;
+
+      if (favoritos.length === 0) {
+        gridFavoritos.innerHTML = `
+          <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
+             <span class="text-5xl block mb-4">🤍</span>
+             <h3 class="text-xl font-bold text-gray-900">Tu lista está vacía</h3>
+             <p class="text-gray-500 mt-2">¡Explora la tienda y guarda los productos que te encanten!</p>
+             <a href="/productos" class="inline-block mt-6 px-6 py-2 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-sm">Ir a comprar</a>
+          </div>`;
+        return;
+      }
+      gridFavoritos.innerHTML = favoritos.map(crearCard).join('');
+    } catch (error) {
+      if (gridFavoritos) {
+        gridFavoritos.innerHTML = `<div class="col-span-full text-center text-red-500 font-bold">Error de red al cargar favoritos.</div>`;
+      }
+    }
+  }
+
+  // Delegación de Eventos
+  if (gridFavoritos) {
+    gridFavoritos.addEventListener('click', async (e) => {
+      const target = e.target as HTMLElement;
+
+      const btnAdd = target.closest('.btn-add-cart');
+      if (btnAdd) {
+        const prodData = btnAdd.getAttribute('data-producto');
+        if (prodData) {
+          const producto = JSON.parse(prodData.replace(/&quot;/g, '"'));
+          agregarAlCarrito(producto);
+          Swal.fire({
+            toast: true,
+            position: 'bottom-end',
+            icon: 'success',
+            title: 'Agregado al carrito',
+            showConfirmButton: false,
+            timer: 1500,
+            background: '#1F2937',
+            color: '#fff'
+          });
+        }
+      }
+
+      const btnRemove = target.closest('.btn-remove-fav');
+      if (btnRemove) {
+        const id = btnRemove.getAttribute('data-id');
+        try {
+          const response = await fetch(`${API_BASE_URL}/wishlist/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (response.ok) {
+            Swal.fire({
+              toast: true,
+              position: 'bottom-end',
+              icon: 'info',
+              title: 'Eliminado de favoritos',
+              showConfirmButton: false,
+              timer: 1500,
+              background: '#1F2937',
+              color: '#fff'
+            });
+            cargarFavoritos(); // Recargar la lista al eliminar
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    });
+  }
+
+  cargarFavoritos();
+</script>

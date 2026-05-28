@@ -1,17 +1,49 @@
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-md">
-  <h2 class="text-2xl font-bold text-gray-800 mb-6">Añadir Producto ➕</h2>
+<div class="p-0">
   <form id="formulario-producto" class="flex flex-col gap-4">
-    <input type="text" id="nombre" placeholder="Nombre (ej. Laptop HP)" class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
-    <input type="text" id="descripcion" placeholder="Descripción" class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
-    <input type="number" id="precio" placeholder="Precio" step="0.01" class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
-    <input type="number" id="stock" placeholder="Stock" class="border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
+    <input
+      type="text"
+      id="nombre"
+      placeholder="Nombre (ej. Laptop HP)"
+      class="custom-input border border-white/10 rounded-xl p-3 bg-white/[0.03] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/60 transition-all duration-300 placeholder-gray-600 shadow-inner"
+      required
+    />
+    <input
+      type="text"
+      id="descripcion"
+      placeholder="Descripción"
+      class="custom-input border border-white/10 rounded-xl p-3 bg-white/[0.03] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/60 transition-all duration-300 placeholder-gray-600 shadow-inner"
+      required
+    />
+    <input
+      type="number"
+      id="precio"
+      placeholder="Precio"
+      step="0.01"
+      class="custom-input border border-white/10 rounded-xl p-3 bg-white/[0.03] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/60 transition-all duration-300 placeholder-gray-600 shadow-inner"
+      required
+    />
+    <input
+      type="number"
+      id="stock"
+      placeholder="Stock"
+      class="custom-input border border-white/10 rounded-xl p-3 bg-white/[0.03] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/60 transition-all duration-300 placeholder-gray-600 shadow-inner"
+      required
+    />
 
-    <div class="mb-4">
-      <label class="block text-gray-700 text-sm font-bold mb-2">Imagen (Opcional)</label>
-      <input type="file" id="imagenInput" accept="image/*" class="w-full text-gray-700 px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" />
+    <div>
+      <label class="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Imagen (Opcional)</label>
+      <input
+        type="file"
+        id="imagenInput"
+        accept="image/*"
+        class="w-full text-gray-400 px-3 py-2 border border-white/10 rounded-xl bg-white/[0.03] focus:outline-none focus:border-blue-500/60 transition-all duration-300 text-sm"
+      />
     </div>
 
-    <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+    <button
+      type="submit"
+      class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-300 shadow-lg shadow-blue-500/20 active:scale-[0.98] cursor-pointer"
+    >
       Guardar Producto
     </button>
   </form>

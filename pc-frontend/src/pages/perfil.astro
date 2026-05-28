@@ -3,50 +3,131 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="Mi Perfil | KimStore 2.0">
-  <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-16">
-        <a href="/productos" class="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors font-bold text-sm">
-          ⬅️ Volver a la Tienda
-        </a>
-        <h1 class="font-black text-xl text-gray-900">Mi <span class="text-blue-600">Perfil</span></h1>
-      </div>
+  <div class="relative min-h-screen bg-[#030712] text-white pb-16 overflow-hidden">
+    <!-- Grid sutil de fondo -->
+    <div class="grid-overlay"></div>
+
+    <!-- Orbes Flotantes con Desenfoque (Aesthetics Premium) -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
     </div>
-  </header>
 
-  <main class="max-w-2xl mx-auto px-4 py-12">
-    <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-      <div class="h-32 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
+    <header class="bg-gray-950/70 border-b border-white/5 sticky top-0 z-40 backdrop-blur-md relative">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <a href="/productos" class="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition-colors font-bold text-sm cursor-pointer">
+            ⬅️ Volver a la Tienda
+          </a>
+          <h1 class="font-black text-xl text-white">Mi <span class="text-blue-500">Perfil 👤</span></h1>
+        </div>
+      </div>
+    </header>
 
-      <div class="px-8 pb-8">
-        <div class="relative flex justify-center -mt-16 mb-6">
-          <div class="relative">
-            <img
-              id="avatar-preview"
-              src="https://ui-avatars.com/api/?name=User&background=E5E7EB&color=374151&size=150"
-              alt="Avatar"
-              class="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-white"
-            />
-            <label for="input-avatar" class="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full cursor-pointer shadow-md transition-transform hover:scale-110">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-              </svg>
-            </label>
-            <input type="file" id="input-avatar" class="hidden" accept="image/*" />
+    <main class="relative z-10 max-w-2xl mx-auto px-4 py-12">
+      <!-- Card de Perfil Glassmorphism -->
+      <div class="bg-white/[0.02] border border-white/[0.07] backdrop-blur-2xl rounded-3xl shadow-2xl overflow-hidden transition-all duration-500 hover:border-white/[0.12]">
+        <!-- Cover decorativo de cabecera -->
+        <div class="h-36 bg-gradient-to-r from-blue-600/30 to-indigo-600/30 border-b border-white/5 relative">
+          <div class="absolute inset-0 bg-grid-white/[0.02]"></div>
+        </div>
+
+        <div class="px-8 pb-10">
+          <div class="relative flex justify-center -mt-20 mb-6">
+            <div class="relative">
+              <img
+                id="avatar-preview"
+                src="https://ui-avatars.com/api/?name=User&background=E5E7EB&color=374151&size=150"
+                alt="Avatar"
+                class="w-36 h-36 rounded-full border-4 border-gray-950 shadow-2xl object-cover bg-gray-900"
+              />
+              <label for="input-avatar" class="absolute bottom-1 right-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-2.5 rounded-full cursor-pointer shadow-lg transition-all hover:scale-110 active:scale-95 border border-white/10 flex items-center justify-center" title="Cambiar foto de perfil">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+              </label>
+              <input type="file" id="input-avatar" class="hidden" accept="image/*" />
+            </div>
+          </div>
+
+          <div class="text-center space-y-4">
+            <h2 id="txt-username" class="text-3xl font-black text-white tracking-tight">Cargando...</h2>
+            <p id="txt-rol" class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest bg-white/5 text-gray-300 border border-white/10">
+              Cargando Rol
+            </p>
           </div>
         </div>
-
-        <div class="text-center space-y-2">
-          <h2 id="txt-username" class="text-3xl font-black text-gray-900">Cargando...</h2>
-          <p id="txt-rol" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gray-100 text-gray-600">
-            Cargando Rol
-          </p>
-        </div>
       </div>
-    </div>
-  </main>
+    </main>
+  </div>
 </Layout>
+
+<style>
+  /* ===== GRID DE FONDO ===== */
+  .grid-overlay {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(circle at center, black, transparent 90%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ===== FLOATING ORBS ===== */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(140px);
+    opacity: 0.08;
+    animation: floating 25s infinite ease-in-out alternate;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .orb-1 {
+    width: 450px;
+    height: 450px;
+    background: rgba(59, 130, 246, 0.5);
+    top: -10%;
+    left: -5%;
+    animation-duration: 20s;
+  }
+
+  .orb-2 {
+    width: 500px;
+    height: 500px;
+    background: rgba(99, 102, 241, 0.5);
+    bottom: -10%;
+    right: -5%;
+    animation-duration: 25s;
+    animation-delay: -5s;
+  }
+
+  .orb-3 {
+    width: 300px;
+    height: 300px;
+    background: rgba(168, 85, 247, 0.4);
+    top: 35%;
+    left: 40%;
+    animation-duration: 30s;
+    animation-delay: -10s;
+  }
+
+  @keyframes floating {
+    0% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(45px, -45px) scale(1.1);
+    }
+    100% {
+      transform: translate(-25px, 25px) scale(0.9);
+    }
+  }
+</style>
 
 <script>
   import Swal from 'sweetalert2';
@@ -92,8 +173,13 @@ import Layout from '../layouts/Layout.astro';
         txtRol.textContent = data.rol === 'ROLE_ADMIN' ? 'Administrador 👑' : 'Cliente Especial 🛍️';
 
         if (data.rol === 'ROLE_ADMIN') {
-          txtRol.classList.replace('bg-gray-100', 'bg-yellow-100');
-          txtRol.classList.replace('text-gray-600', 'text-yellow-800');
+          txtRol.classList.replace('bg-white/5', 'bg-yellow-500/10');
+          txtRol.classList.replace('text-gray-300', 'text-yellow-400');
+          txtRol.classList.add('border-yellow-500/20');
+        } else {
+          txtRol.classList.replace('bg-white/5', 'bg-blue-500/10');
+          txtRol.classList.replace('text-gray-300', 'text-blue-400');
+          txtRol.classList.add('border-blue-500/20');
         }
       }
 
@@ -119,8 +205,10 @@ import Layout from '../layouts/Layout.astro';
 
     Swal.fire({
       title: 'Subiendo foto...',
-      text: 'Por favor espera',
+      text: 'Por favor espera un momento',
       allowOutsideClick: false,
+      background: '#1F2937',
+      color: '#fff',
       didOpen: () => {
         Swal.showLoading();
       }
@@ -142,15 +230,25 @@ import Layout from '../layouts/Layout.astro';
       avatarPreview.src = data.avatarUrl;
       localStorage.setItem('kimstore_avatar', data.avatarUrl);
 
-      Swal.fire('¡Éxito!', 'Tu foto de perfil se ha actualizado.', 'success').then(() => {
+      Swal.fire({
+        icon: 'success',
+        title: '¡Éxito!',
+        text: 'Tu foto de perfil se ha actualizado.',
+        confirmButtonColor: '#3B82F6',
+        background: '#1F2937',
+        color: '#fff'
+      }).then(() => {
         window.location.reload();
       });
     } catch (error: unknown) {
-      Swal.fire(
-        'Error',
-        error instanceof Error ? error.message : 'No se pudo subir la imagen',
-        'error'
-      );
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error instanceof Error ? error.message : 'No se pudo subir la imagen',
+        background: '#1F2937',
+        color: '#fff',
+        confirmButtonColor: '#EF4444'
+      });
     }
   });
 </script>

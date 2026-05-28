@@ -4,165 +4,193 @@ import ProductForm from '../components/ProductForm.astro';
 ---
 
 <Layout title="Panel de Inventario | KimStore 2.0">
-  <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-16">
-        <div class="flex-shrink-0 flex items-center gap-2">
-          <span class="text-2xl">💻</span>
-          <span class="font-black text-xl text-gray-900 tracking-tight">KimStore <span class="text-blue-600">2.0</span></span>
-        </div>
+  <div class="relative min-h-screen bg-[#030712] text-white pb-16 overflow-hidden">
+    <!-- Grid sutil de fondo -->
+    <div class="grid-overlay"></div>
 
-        <div class="flex items-center gap-5">
-          <a
-            id="btn-mis-compras"
-            href="/mis-compras"
-            class="hidden items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-          >
-            📦 Mis Compras
-          </a>
-
-          <a href="/perfil" class="flex items-center gap-3 hover:bg-gray-50 p-2 rounded-xl transition-colors border border-transparent hover:border-gray-200">
-            <img
-              id="nav-avatar"
-              src="https://ui-avatars.com/api/?name=User&background=eff6ff&color=1d4ed8"
-              alt="Perfil"
-              class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
-            />
-            <div class="hidden md:block text-left">
-              <p class="text-sm font-bold text-gray-900 leading-tight">Mi Cuenta</p>
-              <p class="text-xs text-gray-500">Ajustes</p>
-            </div>
-          </a>
-
-          <button
-            id="btn-logout"
-            class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="Cerrar Sesión"
-          >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div id="dashboard-admin" class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8 hidden">
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex items-center gap-4">
-        <div class="p-4 rounded-xl bg-blue-50 text-blue-600 text-2xl font-bold">
-          📦
-        </div>
-        <div>
-          <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Total Productos</p>
-          <p id="metric-total" class="text-3xl font-black text-gray-900 mt-1">0</p>
-        </div>
-      </div>
-
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex items-center gap-4">
-        <div class="p-4 rounded-xl bg-green-50 text-green-600 text-2xl font-bold">
-          💰
-        </div>
-        <div>
-          <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Valor Inventario</p>
-          <p id="metric-valor" class="text-3xl font-black text-gray-900 mt-1">$0.00</p>
-        </div>
-      </div>
-
-      <div id="widget-alerta" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex items-center gap-4 transition-colors">
-        <div id="icon-alerta" class="p-4 rounded-xl bg-gray-50 text-gray-600 text-2xl font-bold">
-          ⚠️
-        </div>
-        <div>
-          <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Stock Crítico</p>
-          <p id="metric-stock" class="text-3xl font-black text-gray-900 mt-1">0</p>
-        </div>
-      </div>
+    <!-- Orbes Flotantes con Desenfoque (Aesthetics Premium) -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
     </div>
 
-    <div class="mb-8 bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
-      <form action="/productos" method="GET" class="flex flex-col md:flex-row gap-4 items-end">
-        <div class="w-full md:flex-1">
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Buscar Equipo</label>
-          <div class="relative">
-            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">🔍</span>
-            <input
-              id="buscar"
-              type="text"
-              name="buscar"
-              class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="Ej. Asus, Laptop, Mac..."
-            />
+    <header class="bg-gray-950/70 border-b border-white/5 sticky top-0 z-40 backdrop-blur-md relative">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <div class="flex-shrink-0 flex items-center gap-2">
+            <span class="text-2xl">💻</span>
+            <span class="font-black text-xl text-white tracking-tight">KimStore <span class="text-blue-500">2.0</span></span>
+          </div>
+
+          <div class="flex items-center gap-5">
+            <a
+              href="/favoritos"
+              class="inline-flex items-center px-4 py-2 border border-white/10 text-sm font-medium rounded-xl text-white bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/20 transition-all gap-1.5 cursor-pointer"
+            >
+              ❤️ Favoritos
+            </a>
+
+            <a
+              id="btn-mis-compras"
+              href="/mis-compras"
+              class="hidden items-center px-4 py-2 border border-white/10 text-sm font-medium rounded-xl text-white bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/20 transition-all cursor-pointer"
+            >
+              📦 Mis Compras
+            </a>
+
+            <a href="/perfil" class="flex items-center gap-3 hover:bg-white/5 p-2 rounded-xl transition-all border border-transparent hover:border-white/10">
+              <img
+                id="nav-avatar"
+                src="https://ui-avatars.com/api/?name=User&background=eff6ff&color=1d4ed8"
+                alt="Perfil"
+                class="w-10 h-10 rounded-full object-cover border-2 border-white/10 shadow-sm"
+              />
+              <div class="hidden md:block text-left">
+                <p class="text-sm font-bold text-white leading-tight">Mi Cuenta</p>
+                <p class="text-xs text-gray-400">Ajustes</p>
+              </div>
+            </a>
+
+            <button
+              id="btn-logout"
+              class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+              title="Cerrar Sesión"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div id="dashboard-admin" class="grid grid-cols-1 sm:grid-cols-4 gap-6 mb-8 hidden">
+        
+        <div class="bg-white/[0.02] border border-white/[0.07] backdrop-blur-xl p-6 rounded-3xl shadow-lg flex items-center gap-4">
+          <div class="p-4 rounded-xl bg-blue-500/10 text-blue-400 text-2xl font-bold">📦</div>
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Productos</p>
+            <p id="metric-total" class="text-3xl font-black text-white mt-1">0</p>
           </div>
         </div>
 
-        <div class="w-full md:w-32">
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Min ($)</label>
-          <input
-            id="precio-min"
-            type="number"
-            name="min"
-            min="0"
-            step="100"
-            class="block w-full px-3 py-2.5 border border-gray-300 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-colors"
-            placeholder="0"
-          />
+        <div class="bg-white/[0.02] border border-white/[0.07] backdrop-blur-xl p-6 rounded-3xl shadow-lg flex items-center gap-4">
+          <div class="p-4 rounded-xl bg-green-500/10 text-green-400 text-2xl font-bold">💰</div>
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Valor Inventario</p>
+            <p id="metric-valor" class="text-3xl font-black text-white mt-1">$0.00</p>
+          </div>
         </div>
 
-        <div class="w-full md:w-32">
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Max ($)</label>
-          <input
-            id="precio-max"
-            type="number"
-            name="max"
-            min="0"
-            step="100"
-            class="block w-full px-3 py-2.5 border border-gray-300 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-colors"
-            placeholder="99999"
-          />
+        <div id="widget-alerta" class="bg-white/[0.02] border border-white/[0.07] backdrop-blur-xl p-6 rounded-3xl shadow-lg flex items-center gap-4 transition-colors">
+          <div id="icon-alerta" class="p-4 rounded-xl bg-gray-500/10 text-gray-400 text-2xl font-bold">⚠️</div>
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Stock Crítico</p>
+            <p id="metric-stock" class="text-3xl font-black text-white mt-1">0</p>
+          </div>
         </div>
 
-        <div class="w-full md:w-auto flex items-center pb-3">
-          <label class="relative inline-flex items-center cursor-pointer group">
-            <input id="solo-disponibles" type="checkbox" name="soloDisponibles" value="true" class="sr-only peer" />
-            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            <span class="ml-3 text-sm font-bold text-gray-700 group-hover:text-blue-600 transition-colors">Solo Disponibles</span>
-          </label>
-        </div>
+        <button 
+          id="btn-descargar-pdf"
+          class="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-3xl shadow-md border border-white/5 flex items-center gap-4 text-left hover:from-blue-600 hover:to-blue-700 hover:border-blue-500/30 transition-all cursor-pointer group text-white relative overflow-hidden active:scale-[0.98]"
+        >
+          <div class="p-4 rounded-xl bg-gray-700/50 text-white text-2xl font-bold group-hover:bg-white/20 transition-colors">
+            📄
+          </div>
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider group-hover:text-blue-100">Exportación</p>
+            <p class="text-lg font-black mt-0.5 leading-tight">Descargar PDF</p>
+          </div>
+        </button>
 
-        <div class="w-full md:w-auto flex gap-2">
-          <button type="submit" class="flex-1 md:flex-none px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors shadow-sm">
-            Filtrar
-          </button>
-          <a id="limpiar-busqueda" href="/productos" class="hidden items-center justify-center px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl transition-colors">
-            ✖
-          </a>
-        </div>
-      </form>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-      <div id="form-columna" class="lg:col-span-1 hidden">
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 sticky top-24">
-          <h2 class="text-xl font-extrabold text-gray-900 mb-6 flex items-center gap-2">
-            Añadir Producto <span class="text-blue-600">➕</span>
-          </h2>
-          <ProductForm />
-        </div>
       </div>
 
-      <div id="grid-columna" class="lg:col-span-4">
-        <div id="estado-productos" class="rounded-2xl border border-gray-200 bg-white p-6 text-gray-500">
-          Cargando productos...
+      <div class="mb-8 bg-white/[0.02] border border-white/[0.07] backdrop-blur-xl p-6 rounded-3xl shadow-lg">
+        <form action="/productos" method="GET" class="flex flex-col md:flex-row gap-4 items-end">
+          <div class="w-full md:flex-1">
+            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Buscar Equipo</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">🔍</span>
+              <input
+                id="buscar"
+                type="text"
+                name="buscar"
+                class="custom-input block w-full pl-10 pr-3 py-2.5 border border-white/10 rounded-xl bg-white/[0.03] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/60 focus:bg-white/[0.06] transition-all duration-300 placeholder-gray-600 shadow-inner"
+                placeholder="Ej. Asus, Laptop, Mac..."
+              />
+            </div>
+          </div>
+
+          <div class="w-full md:w-32">
+            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Min ($)</label>
+            <input
+              id="precio-min"
+              type="number"
+              name="min"
+              min="0"
+              step="100"
+              class="custom-input block w-full px-3 py-2.5 border border-white/10 rounded-xl bg-white/[0.03] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/60 focus:bg-white/[0.06] transition-all duration-300 placeholder-gray-600 shadow-inner"
+              placeholder="0"
+            />
+          </div>
+
+          <div class="w-full md:w-32">
+            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Max ($)</label>
+            <input
+              id="precio-max"
+              type="number"
+              name="max"
+              min="0"
+              step="100"
+              class="custom-input block w-full px-3 py-2.5 border border-white/10 rounded-xl bg-white/[0.03] text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/60 focus:bg-white/[0.06] transition-all duration-300 placeholder-gray-600 shadow-inner"
+              placeholder="99999"
+            />
+          </div>
+
+          <div class="w-full md:w-auto flex items-center pb-3">
+            <label class="relative inline-flex items-center cursor-pointer group">
+              <input id="solo-disponibles" type="checkbox" name="soloDisponibles" value="true" class="sr-only peer" />
+              <div class="w-11 h-6 bg-white/10 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              <span class="ml-3 text-sm font-bold text-gray-300 group-hover:text-blue-400 transition-colors">Solo Disponibles</span>
+            </label>
+          </div>
+
+          <div class="w-full md:w-auto flex gap-2">
+            <button type="submit" class="w-full md:w-auto px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl transition-all duration-300 shadow-lg shadow-blue-500/20 active:scale-[0.98] cursor-pointer">
+              Filtrar
+            </button>
+            <a id="limpiar-busqueda" href="/productos" class="hidden items-center justify-center px-4 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 font-bold rounded-xl transition-all border border-white/10 cursor-pointer">
+              ✖
+            </a>
+          </div>
+        </form>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div id="form-columna" class="lg:col-span-1 hidden">
+          <div class="bg-white/[0.02] border border-white/[0.07] backdrop-blur-xl p-6 rounded-3xl shadow-lg sticky top-24">
+            <h2 class="text-xl font-extrabold text-white mb-6 flex items-center gap-2">
+              Añadir Producto <span class="text-blue-500">➕</span>
+            </h2>
+            <ProductForm />
+          </div>
         </div>
 
-        <div id="productos-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+        <div id="grid-columna" class="lg:col-span-4">
+          <div id="estado-productos" class="rounded-3xl border border-white/10 bg-white/[0.02] p-6 text-gray-400 backdrop-blur-md">
+            Cargando productos...
+          </div>
 
-        <div id="paginacion" class="mt-8 flex justify-center items-center gap-4"></div>
+          <div id="productos-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+
+          <div id="paginacion" class="mt-8 flex justify-center items-center gap-4"></div>
+        </div>
       </div>
-    </div>
-  </main>
+    </main>
+  </div>
 </Layout>
 
 <script>
@@ -186,6 +214,7 @@ import ProductForm from '../components/ProductForm.astro';
 
   const token = localStorage.getItem('kimstore_token');
   const role = localStorage.getItem('kimstore_role');
+  let misFavoritos = new Set<number>();
   const navAvatar = document.getElementById('nav-avatar') as HTMLImageElement;
   const savedAvatar = localStorage.getItem('kimstore_avatar');
   const btnMisCompras = document.getElementById('btn-mis-compras');
@@ -251,10 +280,10 @@ import ProductForm from '../components/ProductForm.astro';
       if (txtStock) txtStock.textContent = data.cantidadStockBajo.toString();
 
       if (data.cantidadStockBajo > 0 && widgetAlerta && iconAlerta) {
-        widgetAlerta.classList.remove('border-gray-200', 'bg-white');
-        widgetAlerta.classList.add('border-red-200', 'bg-red-50');
-        iconAlerta.classList.remove('bg-gray-50', 'text-gray-600');
-        iconAlerta.classList.add('bg-red-100', 'text-red-600');
+        widgetAlerta.classList.remove('border-white/[0.07]', 'bg-white/[0.02]');
+        widgetAlerta.classList.add('border-red-500/30', 'bg-red-500/5');
+        iconAlerta.classList.remove('bg-gray-500/10', 'text-gray-400');
+        iconAlerta.classList.add('bg-red-500/20', 'text-red-400');
       }
     } catch (error) {
       console.error('Error al solicitar el dashboard:', error);
@@ -267,6 +296,64 @@ import ProductForm from '../components/ProductForm.astro';
     gridColumna?.classList.add('lg:col-span-3');
     dashboardAdmin?.classList.remove('hidden');
     cargarMetricas();
+
+    // --- LÓGICA PARA GENERAR Y DESCARGAR EL REPORTE PDF DESDE EL CLIENTE ---
+    const btnPDF = document.getElementById('btn-descargar-pdf');
+
+    btnPDF?.addEventListener('click', async () => {
+      // 1. Mostrar pantalla de carga corporativa con SweetAlert2
+      Swal.fire({
+        title: 'Generando Reporte...',
+        text: 'Compilando base de datos e inventarios físicos',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      try {
+        // 2. Hacer la petición solicitando un formato BLOB (Binary Large Object)
+        const response = await fetch(`${API_URL}/dashboard/reporte-pdf`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) throw new Error('No tienes los privilegios necesarios para exportar finanzas.');
+
+        // 3. Extraer el archivo binario de la respuesta
+        const blob = await response.blob();
+
+        // 4. Crear un enlace oculto en el navegador para forzar la descarga del archivo binario
+        const urlDescarga = window.URL.createObjectURL(blob);
+        const linkTemporal = document.createElement('a');
+        linkTemporal.href = urlDescarga;
+        
+        // Formateamos el nombre del archivo de manera elegante
+        const fecha = new Date().toLocaleDateString().replace(/\//g, '-');
+        linkTemporal.download = `Reporte_Inventario_KimStore_${fecha}.pdf`;
+        
+        // Simulamos el click del usuario en segundo plano para iniciar la descarga en su PC
+        document.body.appendChild(linkTemporal);
+        linkTemporal.click();
+        
+        // Limpieza de memoria
+        document.body.removeChild(linkTemporal);
+        window.URL.revokeObjectURL(urlDescarga);
+
+        // Confirmación de éxito
+        Swal.fire({
+          icon: 'success',
+          title: '¡Reporte Exportado!',
+          text: 'El documento PDF se ha guardado en tu carpeta de descargas.',
+          confirmButtonColor: '#2563eb'
+        });
+
+      } catch (error) {
+        Swal.fire('Error de Exportación', (error as Error).message, 'error');
+      }
+    });
   }
 
   const buscarInput = document.getElementById('buscar') as HTMLInputElement;
@@ -284,22 +371,103 @@ import ProductForm from '../components/ProductForm.astro';
     return elemento.innerHTML;
   };
 
-  const MOCK_RESENAS: Resena[] = [
-    {
-      id: -1,
-      username: 'MarianaTech',
-      calificacion: 5,
-      comentario: 'La computadora llegó impecable, rápida y lista para trabajar. El rendimiento en multitarea se siente muy sólido.',
-      fecha: 'Demo'
-    },
-    {
-      id: -2,
-      username: 'SetupGamer',
-      calificacion: 4,
-      comentario: 'Muy buena relación precio-rendimiento. La compraría de nuevo para un setup de oficina o gaming casual.',
-      fecha: 'Demo'
+  const obtenerMockResenas = (nombreProducto: string): Resena[] => {
+    const nombreLower = nombreProducto.toLowerCase();
+    
+    // Categorización inteligente
+    let esLaptop = /\b(laptop|notebook|macbook|asus|hp|dell|lenovo|portatil|zenbook|thinkpad)\b/.test(nombreLower);
+    let esPC = /\b(desktop|computadora|pc|ryzen|intel|core|gamer|setup|nvidia|rtx|radeon)\b/.test(nombreLower);
+    let esPeriferico = /\b(mouse|teclado|keyboard|headset|audifonos|auriculares|parlante|bocina|speaker|mousepad|impresora|printer|audífonos)\b/.test(nombreLower);
+    let esComponente = /\b(ram|ddr|ssd|nvme|disco|hard\s*drive|tarjeta|grafica|motherboard|placa|fuente|power\s*supply|corsair|kingston|ventilador)\b/.test(nombreLower);
+
+    if (esLaptop) {
+      return [
+        {
+          id: -1,
+          username: 'MarianaTech',
+          calificacion: 5,
+          comentario: `Esta laptop ${nombreProducto} es increíble. La batería dura muchísimo para trabajar fuera de casa y la pantalla tiene colores súper vívidos. Excelente compra.`,
+          fecha: 'Demo'
+        },
+        {
+          id: -2,
+          username: 'GamerPortatil',
+          calificacion: 4,
+          comentario: `Buen rendimiento en general. Se calienta un poco bajo carga pesada, pero con una base refrigeradora va de maravilla. Totalmente recomendado por el precio.`,
+          fecha: 'Demo'
+        }
+      ];
+    } else if (esPC) {
+      return [
+        {
+          id: -1,
+          username: 'MasterRace99',
+          calificacion: 5,
+          comentario: `La PC vuela. El ensamblado es súper limpio, los componentes son de primera calidad y las temperaturas se mantienen bajísimas en gaming y renderizado.`,
+          fecha: 'Demo'
+        },
+        {
+          id: -2,
+          username: 'OficinaPro',
+          calificacion: 5,
+          comentario: `Excelente estación de trabajo. Silenciosa, rápida y con gran capacidad de expansión a futuro. El servicio de entrega fue sumamente rápido.`,
+          fecha: 'Demo'
+        }
+      ];
+    } else if (esPeriferico) {
+      return [
+        {
+          id: -1,
+          username: 'ClaudioClick',
+          calificacion: 5,
+          comentario: `El diseño ergonómico de este ${nombreProducto} es excepcional. Se siente premium al tacto, tiene excelente respuesta táctil y la conectividad no falla nunca.`,
+          fecha: 'Demo'
+        },
+        {
+          id: -2,
+          username: 'EstiloEscritorio',
+          calificacion: 4,
+          comentario: `Muy bonito estéticamente y funciona de maravilla en el día a día. El cable/batería tiene una longitud excelente y los materiales se ven duraderos.`,
+          fecha: 'Demo'
+        }
+      ];
+    } else if (esComponente) {
+      return [
+        {
+          id: -1,
+          username: 'HardwareGuru',
+          calificacion: 5,
+          comentario: `Las velocidades de transferencia y el rendimiento de este componente son exactamente los especificados. Instalación súper sencilla y compatibilidad inmediata.`,
+          fecha: 'Demo'
+        },
+        {
+          id: -2,
+          username: 'OverclockerX',
+          calificacion: 4,
+          comentario: `Excelente disipación térmica y estabilidad. Calidad/precio inmejorable para mejorar cualquier setup de gama media-alta.`,
+          fecha: 'Demo'
+        }
+      ];
+    } else {
+      // General
+      return [
+        {
+          id: -1,
+          username: 'ClienteSatisfecho',
+          calificacion: 5,
+          comentario: `Producto de alta calidad. Superó mis expectativas en cuanto a desempeño y acabados. Venía muy bien empacado y protegido.`,
+          fecha: 'Demo'
+        },
+        {
+          id: -2,
+          username: 'UsuarioKimStore',
+          calificacion: 4,
+          comentario: `Cumple perfectamente con su función. Es robusto, estético y se siente de buena construcción. Excelente atención al cliente de la tienda.`,
+          fecha: 'Demo'
+        }
+      ];
     }
-  ];
+  };
 
   const crearUrlPaginaConFiltros = (
     buscar: string,
@@ -317,74 +485,87 @@ import ProductForm from '../components/ProductForm.astro';
     return `/productos?${params.toString()}`;
   };
 
-  const crearCardProducto = (producto: Producto) => `
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full group">
-      <div class="h-48 bg-gray-50 relative border-b border-gray-100 flex items-center justify-center overflow-hidden">
-        ${producto.imageUrl
-          ? `<img src="${escaparHtml(producto.imageUrl)}" alt="${escaparHtml(producto.nombre)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />`
-          : `<span class="text-6xl group-hover:scale-110 transition-transform duration-500">💻</span>`
-        }
+  const crearCardProducto = (producto: Producto) => {
+    const esFavorito = misFavoritos.has(producto.id);
+    const iconoCorazon = esFavorito ? '❤️' : '🤍';
 
-        <div class="absolute top-3 right-3">
-          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${producto.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-            ${producto.stock > 0 ? `${producto.stock} en stock` : 'Agotado'}
-          </span>
-        </div>
-      </div>
-
-      <div class="p-5 flex flex-col flex-grow">
-        <h3 class="text-xl font-bold text-gray-900 leading-tight mb-2 line-clamp-1" title="${escaparHtml(producto.nombre)}">
-          ${escaparHtml(producto.nombre)}
-        </h3>
-        <p class="text-sm text-gray-600 mb-4 flex-grow line-clamp-2">
-          ${escaparHtml(producto.descripcion)}
-        </p>
-
-        <div class="text-3xl font-black text-gray-900 mb-5">
-          $${producto.precio.toLocaleString()}
-        </div>
-
-        <div class="space-y-3 mt-auto">
-          <button
-            class="btn-add-cart w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3 px-4 rounded-xl transition-colors flex justify-center items-center gap-2 shadow-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
-            data-producto="${encodeURIComponent(JSON.stringify(producto))}"
-            ${producto.stock === 0 ? 'disabled' : ''}
-          >
-            <span>${producto.stock > 0 ? 'Añadir al carrito' : 'Sin inventario'}</span>
-            <span class="text-lg">🛒</span>
-          </button>
+    return `
+      <div class="bg-white/[0.02] border border-white/[0.07] hover:border-white/[0.15] rounded-3xl overflow-hidden hover:shadow-2xl hover:shadow-blue-500/5 transition-all duration-500 flex flex-col h-full group backdrop-blur-xl">
+        <div class="h-48 bg-white/[0.01] relative border-b border-white/5 flex items-center justify-center overflow-hidden">
+          ${producto.imageUrl
+            ? `<img src="${escaparHtml(producto.imageUrl)}" alt="${escaparHtml(producto.nombre)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />`
+            : `<span class="text-6xl group-hover:scale-110 transition-transform duration-500">💻</span>`
+          }
 
           <button
-            class="btn-ver-resenas w-full bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold py-2.5 px-4 rounded-xl transition-colors flex justify-center items-center gap-2 border border-gray-200"
+            class="btn-favorito absolute top-3 left-3 bg-gray-950/80 hover:bg-gray-900 p-2 rounded-xl shadow-md transition-all text-lg flex items-center justify-center hover:scale-110 active:scale-95 border border-white/10 cursor-pointer z-10 text-white backdrop-blur-sm"
             data-id="${producto.id}"
-            data-nombre="${escaparHtml(producto.nombre)}"
+            title="${esFavorito ? 'Quitar de favoritos' : 'Añadir a favoritos'}"
           >
-            <span>⭐ Opiniones y Reseñas</span>
+            ${iconoCorazon}
           </button>
 
-          <div data-admin-actions class="flex justify-between items-center border-t border-gray-100 pt-3 hidden">
+          <div class="absolute top-3 right-3">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${producto.stock > 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}">
+              ${producto.stock > 0 ? `${producto.stock} en stock` : 'Agotado'}
+            </span>
+          </div>
+        </div>
+
+        <div class="p-5 flex flex-col flex-grow">
+          <h3 class="text-xl font-bold text-white leading-tight mb-2 line-clamp-1" title="${escaparHtml(producto.nombre)}">
+            ${escaparHtml(producto.nombre)}
+          </h3>
+          <p class="text-sm text-gray-400 mb-4 flex-grow line-clamp-2">
+            ${escaparHtml(producto.descripcion)}
+          </p>
+
+          <div class="text-3xl font-black text-white mb-5 bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+            $${producto.precio.toLocaleString()}
+          </div>
+
+          <div class="space-y-3 mt-auto">
             <button
-              class="btn-editar flex items-center gap-1 text-sm font-semibold text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded-md hover:bg-blue-50"
+              class="btn-add-cart w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 active:scale-[0.98] text-white font-bold py-3 px-4 rounded-xl transition-all flex justify-center items-center gap-2 shadow-lg shadow-blue-500/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:shadow-none"
+              data-producto="${encodeURIComponent(JSON.stringify(producto))}"
+              ${producto.stock === 0 ? 'disabled' : ''}
+            >
+              <span>${producto.stock > 0 ? 'Añadir al carrito' : 'Sin inventario'}</span>
+              <span class="text-lg">🛒</span>
+            </button>
+
+            <button
+              class="btn-ver-resenas w-full bg-white/5 hover:bg-white/10 text-gray-200 font-bold py-2.5 px-4 rounded-xl transition-all flex justify-center items-center gap-2 border border-white/10 cursor-pointer"
               data-id="${producto.id}"
               data-nombre="${escaparHtml(producto.nombre)}"
-              data-desc="${escaparHtml(producto.descripcion)}"
-              data-precio="${producto.precio}"
-              data-stock="${producto.stock}"
-              data-image-url="${escaparHtml(producto.imageUrl)}"
             >
-              ✏️ Editar
+              <span>⭐ Opiniones y Reseñas</span>
             </button>
-            <button
-              class="btn-eliminar flex items-center gap-1 text-sm font-semibold text-gray-500 hover:text-red-600 transition-colors px-2 py-1 rounded-md hover:bg-red-50"
-              data-id="${producto.id}"
-            >
-              🗑️ Eliminar
-            </button>
+
+            <div data-admin-actions class="flex justify-between items-center border-t border-white/5 pt-3 hidden">
+              <button
+                class="btn-editar flex items-center gap-1 text-sm font-semibold text-gray-400 hover:text-blue-400 transition-colors px-2 py-1 rounded-md hover:bg-blue-500/10 cursor-pointer"
+                data-id="${producto.id}"
+                data-nombre="${escaparHtml(producto.nombre)}"
+                data-desc="${escaparHtml(producto.descripcion)}"
+                data-precio="${producto.precio}"
+                data-stock="${producto.stock}"
+                data-image-url="${escaparHtml(producto.imageUrl)}"
+              >
+                ✏️ Editar
+              </button>
+              <button
+                class="btn-eliminar flex items-center gap-1 text-sm font-semibold text-gray-400 hover:text-red-400 transition-colors px-2 py-1 rounded-md hover:bg-red-500/10 cursor-pointer"
+                data-id="${producto.id}"
+              >
+                🗑️ Eliminar
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  `;
+    `;
+  };
 
   const configurarEventosCrud = () => {
     document.querySelectorAll('.btn-add-cart').forEach(boton => {
@@ -408,6 +589,62 @@ import ProductForm from '../components/ProductForm.astro';
       });
     });
 
+    document.querySelectorAll('.btn-favorito').forEach(boton => {
+      boton.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const id = (boton as HTMLButtonElement).getAttribute('data-id');
+        if (!id) return;
+
+        const esFavorito = misFavoritos.has(Number(id));
+        const method = esFavorito ? 'DELETE' : 'POST';
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/wishlist/${id}`, {
+            method: method,
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('No se pudo actualizar la lista de deseos');
+          }
+
+          if (esFavorito) {
+            misFavoritos.delete(Number(id));
+            (boton as HTMLButtonElement).innerHTML = '🤍';
+            (boton as HTMLButtonElement).title = 'Añadir a favoritos';
+            Swal.fire({
+              toast: true,
+              position: 'bottom-end',
+              icon: 'info',
+              title: 'Eliminado de favoritos',
+              showConfirmButton: false,
+              timer: 1500,
+              background: '#1F2937',
+              color: '#fff'
+            });
+          } else {
+            misFavoritos.add(Number(id));
+            (boton as HTMLButtonElement).innerHTML = '❤️';
+            (boton as HTMLButtonElement).title = 'Quitar de favoritos';
+            Swal.fire({
+              toast: true,
+              position: 'bottom-end',
+              icon: 'success',
+              title: 'Añadido a favoritos',
+              showConfirmButton: false,
+              timer: 1500,
+              background: '#1F2937',
+              color: '#fff'
+            });
+          }
+        } catch (error: unknown) {
+          Swal.fire('Error', error instanceof Error ? error.message : 'No se pudo completar la acción', 'error');
+        }
+      });
+    });
+
     document.querySelectorAll('.btn-ver-resenas').forEach(boton => {
       boton.addEventListener('click', async () => {
         const id = (boton as HTMLButtonElement).getAttribute('data-id');
@@ -422,13 +659,13 @@ import ProductForm from '../components/ProductForm.astro';
           const resenas: Resena[] = await response.json();
           let htmlResenas = '<div class="text-left space-y-3 max-h-72 overflow-y-auto p-1 mt-4">';
 
-          const resenasVisibles = resenas.length > 0 ? resenas : MOCK_RESENAS;
+          const resenasVisibles = resenas.length > 0 ? resenas : obtenerMockResenas(nombre);
 
           if (resenas.length === 0) {
             htmlResenas += `
-              <div class="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-blue-800">
+              <div class="rounded-xl border border-blue-500/30 bg-blue-500/5 px-4 py-3 text-blue-400">
                 <p class="text-sm font-bold">Reseñas de ejemplo</p>
-                <p class="text-xs mt-1">Aún no hay reseñas reales para este producto. Estas tarjetas son mock para previsualizar el diseño.</p>
+                <p class="text-xs mt-1">Aún no hay reseñas reales para este producto. Estas tarjetas son mock y se generan dinámicamente según el tipo de producto.</p>
               </div>`;
           }
 
@@ -437,13 +674,13 @@ import ProductForm from '../components/ProductForm.astro';
               const estrellasVacias = '☆'.repeat(5 - resena.calificacion);
 
               htmlResenas += `
-                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <div class="bg-white/[0.03] p-4 rounded-xl border border-white/10 shadow-sm">
                   <div class="flex justify-between items-center mb-2">
-                    <span class="font-bold text-gray-800 flex items-center gap-2">👤 ${escaparHtml(resena.username)}</span>
-                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">${escaparHtml(resena.fecha)}</span>
+                    <span class="font-bold text-white flex items-center gap-2">👤 ${escaparHtml(resena.username)}</span>
+                    <span class="text-xs text-gray-400 bg-white/5 px-2 py-1 rounded-md border border-white/5">${escaparHtml(resena.fecha)}</span>
                   </div>
-                  <div class="text-yellow-400 text-sm mb-2 tracking-widest">${estrellas}<span class="text-gray-300">${estrellasVacias}</span></div>
-                  <p class="text-sm text-gray-600 leading-relaxed">${escaparHtml(resena.comentario)}</p>
+                  <div class="text-yellow-400 text-sm mb-2 tracking-widest">${estrellas}<span class="text-gray-600">${estrellasVacias}</span></div>
+                  <p class="text-sm text-gray-300 leading-relaxed">${escaparHtml(resena.comentario)}</p>
                 </div>
               `;
             });
@@ -451,14 +688,16 @@ import ProductForm from '../components/ProductForm.astro';
           htmlResenas += '</div>';
 
           const modalLista = await Swal.fire({
-            title: `<span class="text-xl font-bold">Reseñas de ${escaparHtml(nombre)}</span>`,
+            title: `<span class="text-xl font-bold text-white">Reseñas de ${escaparHtml(nombre)}</span>`,
             html: htmlResenas,
             showCancelButton: true,
             confirmButtonText: '✍️ Escribir Reseña',
             cancelButtonText: 'Cerrar',
             confirmButtonColor: '#3B82F6',
             cancelButtonColor: '#6B7280',
-            width: '32em'
+            width: '32em',
+            background: '#1F2937',
+            color: '#fff'
           });
 
           if (!modalLista.isConfirmed) return;
@@ -468,28 +707,34 @@ import ProductForm from '../components/ProductForm.astro';
             Swal.fire({
               icon: 'warning',
               title: 'Acceso Denegado',
-              text: 'Debes iniciar sesión para dejar una reseña.'
+              text: 'Debes iniciar sesión para dejar una reseña.',
+              background: '#1F2937',
+              color: '#fff',
+              confirmButtonColor: '#3B82F6'
             });
             return;
           }
 
           const formModal = await Swal.fire({
             title: 'Califica este producto',
+            background: '#1F2937',
+            color: '#fff',
+            confirmButtonColor: '#10B981',
             html: `
               <div class="space-y-4 text-left mt-4">
                 <div>
-                  <label class="block text-sm font-bold text-gray-700 mb-1">Estrellas</label>
-                  <select id="input-estrellas" class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    <option value="5">⭐⭐⭐⭐⭐ (5) ¡Excelente!</option>
-                    <option value="4">⭐⭐⭐⭐ (4) Muy bueno</option>
-                    <option value="3">⭐⭐⭐ (3) Bueno</option>
-                    <option value="2">⭐⭐ (2) Regular</option>
-                    <option value="1">⭐ (1) Malo</option>
+                  <label class="block text-sm font-bold text-gray-300 mb-1">Estrellas</label>
+                  <select id="input-estrellas" class="w-full px-4 py-3 border border-white/10 rounded-xl bg-white/[0.03] text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <option value="5" class="bg-gray-800">⭐⭐⭐⭐⭐ (5) ¡Excelente!</option>
+                    <option value="4" class="bg-gray-800">⭐⭐⭐⭐ (4) Muy bueno</option>
+                    <option value="3" class="bg-gray-800">⭐⭐⭐ (3) Bueno</option>
+                    <option value="2" class="bg-gray-800">⭐⭐ (2) Regular</option>
+                    <option value="1" class="bg-gray-800">⭐ (1) Malo</option>
                   </select>
                 </div>
                 <div>
-                  <label class="block text-sm font-bold text-gray-700 mb-1">Comentario</label>
-                  <textarea id="input-comentario" rows="3" placeholder="¿Qué te pareció el producto?" class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"></textarea>
+                  <label class="block text-sm font-bold text-gray-300 mb-1">Comentario</label>
+                  <textarea id="input-comentario" rows="3" placeholder="¿Qué te pareció el producto?" class="w-full px-4 py-3 border border-white/10 rounded-xl bg-white/[0.03] text-white focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"></textarea>
                 </div>
               </div>
             `,
@@ -498,6 +743,7 @@ import ProductForm from '../components/ProductForm.astro';
             confirmButtonText: 'Publicar',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#10B981',
+            cancelButtonColor: '#6B7280',
             preConfirm: () => {
               const estrellas = (document.getElementById('input-estrellas') as HTMLSelectElement).value;
               const comentario = (document.getElementById('input-comentario') as HTMLTextAreaElement).value;
@@ -630,6 +876,24 @@ import ProductForm from '../components/ProductForm.astro';
     });
   };
 
+  const cargarFavoritos = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/wishlist`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const favoritos = await response.json();
+        misFavoritos = new Set(favoritos.map((fav: any) => fav.id));
+      }
+    } catch (error) {
+      console.error('Error al cargar favoritos:', error);
+    }
+  };
+
   const cargarProductos = async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const buscar = urlParams.get('buscar') || '';
@@ -666,6 +930,8 @@ import ProductForm from '../components/ProductForm.astro';
       const data = await respuesta.json();
       const productos: Producto[] = Array.isArray(data) ? data : data.content || [];
       const totalPaginas = Array.isArray(data) ? 0 : data.totalPages || 0;
+
+      await cargarFavoritos();
 
       productosGrid.innerHTML = productos.map(crearCardProducto).join('');
       estadoProductos.classList.toggle('hidden', productos.length > 0);
@@ -719,3 +985,73 @@ import ProductForm from '../components/ProductForm.astro';
 
   cargarProductos();
 </script>
+
+<style>
+  /* ===== GRID DE FONDO ===== */
+  .grid-overlay {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(circle at center, black, transparent 90%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ===== FLOATING ORBS ===== */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(140px);
+    opacity: 0.08;
+    animation: floating 25s infinite ease-in-out alternate;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .orb-1 {
+    width: 500px;
+    height: 500px;
+    background: rgba(59, 130, 246, 0.5);
+    top: -10%;
+    left: -5%;
+    animation-duration: 22s;
+  }
+
+  .orb-2 {
+    width: 600px;
+    height: 600px;
+    background: rgba(99, 102, 241, 0.5);
+    bottom: -10%;
+    right: -5%;
+    animation-duration: 28s;
+    animation-delay: -7s;
+  }
+
+  .orb-3 {
+    width: 400px;
+    height: 400px;
+    background: rgba(168, 85, 247, 0.4);
+    top: 30%;
+    left: 30%;
+    animation-duration: 35s;
+    animation-delay: -12s;
+  }
+
+  @keyframes floating {
+    0% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(50px, -50px) scale(1.1);
+    }
+    100% {
+      transform: translate(-30px, 30px) scale(0.9);
+    }
+  }
+
+  /* ===== TRANSICIONES INPUT ===== */
+  .custom-input {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+</style>
